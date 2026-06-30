@@ -11,6 +11,11 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Show Xcode version
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+
       - name: Select Xcode 26
         run: |
           XCODE_PATH=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort | tail -n 1)
