@@ -84,7 +84,7 @@ const LevelSelect: React.FC<{
 
   return (
     <div
-      className="relative h-full w-full overflow-y-auto pb-8 text-[#f8edd2]"
+      className="safe-screen relative h-full w-full overflow-y-auto text-[#f8edd2]"
       style={{ background: themeBackground }}
     >
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -100,7 +100,7 @@ const LevelSelect: React.FC<{
           />
         ))}
       </div>
-      <div className="relative overflow-hidden rounded-b-[34px] border-b border-[#d6a84f]/20 bg-[linear-gradient(145deg,rgba(14,19,42,0.96),rgba(51,30,66,0.94)_50%,rgba(13,33,58,0.96))] px-5 pb-6 pt-6 shadow-[0_20px_48px_rgba(0,0,0,0.46),0_0_36px_rgba(214,168,79,0.12)]">
+      <div className="safe-header relative overflow-hidden rounded-b-[34px] border-b border-[#d6a84f]/20 bg-[linear-gradient(145deg,rgba(14,19,42,0.96),rgba(51,30,66,0.94)_50%,rgba(13,33,58,0.96))] pb-6 shadow-[0_20px_48px_rgba(0,0,0,0.46),0_0_36px_rgba(214,168,79,0.12)]">
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),transparent_42%,rgba(0,0,0,0.25))]" />
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           {Array.from({ length: 8 }).map((_, i) => (
@@ -124,7 +124,7 @@ const LevelSelect: React.FC<{
             <button
               type="button"
               onClick={onAccount}
-              className="flex h-11 flex-col justify-center rounded-full border border-white/10 bg-white/10 px-3 text-left text-xs font-extrabold text-[#f8edd2] shadow-lg ring-1 ring-[#d6a84f]/15 transition hover:bg-white/15 active:scale-95"
+              className="safe-hit flex flex-col justify-center rounded-full border border-white/10 bg-white/10 px-3 text-left text-xs font-extrabold text-[#f8edd2] shadow-lg ring-1 ring-[#d6a84f]/15 transition hover:bg-white/15 active:scale-95"
               title="Account and save"
             >
               <span className="leading-tight">{accountLabel}</span>
@@ -135,7 +135,7 @@ const LevelSelect: React.FC<{
             <button
               type="button"
               onClick={onCustomize}
-              className="grid h-11 w-11 place-items-center rounded-full border border-[#d6a84f]/24 bg-[#d6a84f]/12 text-[#f6d98d] shadow-lg ring-1 ring-[#d6a84f]/15 transition hover:bg-[#d6a84f]/18 active:scale-95"
+              className="safe-hit grid place-items-center rounded-full border border-[#d6a84f]/24 bg-[#d6a84f]/12 text-[#f6d98d] shadow-lg ring-1 ring-[#d6a84f]/15 transition hover:bg-[#d6a84f]/18 active:scale-95"
               title="Customize"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22a10 10 0 1 1 10-10c0 1.7-1.3 3-3 3h-1.4c-.8 0-1.3.8-1 1.5.4 1.1-.4 2.5-1.6 2.5h-3" /><circle cx="7.5" cy="10.5" r="1" /><circle cx="10.5" cy="6.5" r="1" /><circle cx="14.5" cy="6.5" r="1" /><circle cx="17.5" cy="10.5" r="1" /></svg>
@@ -143,7 +143,7 @@ const LevelSelect: React.FC<{
             <button
               type="button"
               onClick={onSettings}
-              className="grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-white/10 text-[#f8edd2] shadow-lg ring-1 ring-[#d6a84f]/15 transition hover:bg-white/15 active:scale-95"
+              className="safe-hit grid place-items-center rounded-full border border-white/10 bg-white/10 text-[#f8edd2] shadow-lg ring-1 ring-[#d6a84f]/15 transition hover:bg-white/15 active:scale-95"
               title="Settings"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 12a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 5" /></svg>
@@ -181,7 +181,7 @@ const LevelSelect: React.FC<{
         </div>
       </div>
 
-      <div className="relative px-4 pt-5">
+      <div className="safe-content relative pt-5">
         <div className="mb-3 flex items-center justify-between">
           <div>
             <h2 className="font-display text-xl font-extrabold text-[#fff5d8]">Story Mode</h2>

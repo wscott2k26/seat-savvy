@@ -75,6 +75,7 @@ class BrowserAudioEngine {
   };
 
   private missingAssets = new Set<string>();
+  private audioContext: AudioContext | null = null;
 
   sync(preferences: AudioPreferences, environment?: AudioEnvironment) {
     if (typeof window === 'undefined' || typeof Audio === 'undefined') return;
@@ -127,11 +128,106 @@ class BrowserAudioEngine {
     }
 
     const basePath = `/audio/sfx/${SFX_BY_SOUND[sound]}`;
-    if (this.missingAssets.has(basePath)) return;
+    if (this.missingAssets.has(basePath)) {
+      if (sound === 'win') this.playSuccessFallback(preferences.sfxVolume);
+      return;
+    }
 
-    this.playOneShot(basePath, preferences.sfxVolume, () => {
+    this.playOneShot(
+      basePath,
+      preferences.sfxVolume,
+      () => {
+        this.missingAssets.add(basePath);
+        if (sound === 'win') this.playSuccessFallback(preferences.sfxVolume);
+      },
+      undefined,
+      sound === 'win'
+        ? () => this.playSuccessFallback(preferences.sfxVolume)
+        : undefined,
+    );
+  }
+
+  private playSuccessFallback(volume: number) {
+    if (typeof window === 'undefined') return;
+    const AudioContextCtor =
+      window.AudioContext ||
+      (window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
+    if (!AudioContextCtor) return;
+
+    try {
+      const context = this.audioContext ?? new AudioContextCtor();
+      this.audioContext = context;
+      const startChime = () => {
+        const now = context.currentTime;
+        const master = context.createGain();
+        master.gain.setValueAtTime(0.0001, now);
+        master.gain.exponentialRampToValueAtTime(Math.max(0.0001, clamp(volume) * 0.22), now + 0.025);
+        master.gain.exponentialRampToValueAtTime(0.0001, now + 0.62);
+        master.connect(context.destination);
+
+        [523.25, 659.25, 783.99].forEach((frequency, index) => {
+          const osc = context.createOscillator();
+          const gain = context.createGain();
+          const start = now + index * 0.105;
+          osc.type = index === 2 ? 'triangle' : 'sine';
+          osc.frequency.setValueAtTime(frequency, start);
+          gain.gain.setValueAtTime(0.0001, start);
+          gain.gain.exponentialRampToValueAtTime(0.55, start + 0.025);
+          gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.28);
+          osc.connect(gain);
+          gain.connect(master);
+          osc.start(start);
+          osc.stop(start + 0.32);
+        });
+      };
+
+      if (context.state === 'suspended') {
+        void context.resume().then(startChime).catch(() => undefined);
+      } else {
+        startChime();
+      }
+    } catch (error) {
+      devAudioLog('Web Audio fallback failed', 'success-chime', error);
+    }
+  }
+
+  private playOneShot(
+    basePath: string,
+    volume: number,
+    onMissing?: () => void,
+    stopAfterMs?: number,
+    onPlaybackBlocked?: () => void,
+  ) {
+    if (this.missingAssets.has(basePath)) {
+      onMissing?.();
+      return;
+    }
+
+    const audio = new Audio();
+    audio.preload = 'auto';
+    audio.volume = clamp(volume);
+    devAudioLog('Trying sound', basePath);
+    this.loadWithFallback(audio, basePath, () => {
+      devAudioLog('Missing sound', basePath);
       this.missingAssets.add(basePath);
+      onMissing?.();
     });
+    void audio
+      .play()
+      .then(() => {
+        if (stopAfterMs) {
+          window.setTimeout(() => {
+            audio.pause();
+            audio.removeAttribute('src');
+            audio.load();
+          }, stopAfterMs);
+        }
+      })
+      .catch((error) => {
+        devAudioLog('Playback blocked', basePath, error);
+        onPlaybackBlocked?.();
+      });
   }
 
   private ensureLoop(kind: LoopKind, basePath: string, volume: number) {
@@ -173,42 +269,6 @@ class BrowserAudioEngine {
       .then(() => this.fadeTo(audio, targetVolume))
       .catch(() => {
         audio.volume = targetVolume;
-      });
-  }
-
-  private playOneShot(
-    basePath: string,
-    volume: number,
-    onMissing?: () => void,
-    stopAfterMs?: number,
-  ) {
-    if (this.missingAssets.has(basePath)) {
-      onMissing?.();
-      return;
-    }
-
-    const audio = new Audio();
-    audio.preload = 'auto';
-    audio.volume = clamp(volume);
-    devAudioLog('Trying sound', basePath);
-    this.loadWithFallback(audio, basePath, () => {
-      devAudioLog('Missing sound', basePath);
-      this.missingAssets.add(basePath);
-      onMissing?.();
-    });
-    void audio
-      .play()
-      .then(() => {
-        if (stopAfterMs) {
-          window.setTimeout(() => {
-            audio.pause();
-            audio.removeAttribute('src');
-            audio.load();
-          }, stopAfterMs);
-        }
-      })
-      .catch((error) => {
-        devAudioLog('Playback blocked', basePath, error);
       });
   }
 

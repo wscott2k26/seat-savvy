@@ -80,13 +80,13 @@ const HomeScreen: React.FC = () => {
   };
 
   return (
-    <div className="relative h-full w-full overflow-y-auto bg-[radial-gradient(circle_at_18%_0%,rgba(214,168,79,0.13),transparent_26%),linear-gradient(180deg,#030712_0%,#0a1022_40%,#1b1126_100%)] pb-8 text-[#f8edd2]">
-      <header className="relative overflow-hidden rounded-b-[34px] border-b border-[#d6a84f]/22 bg-[linear-gradient(145deg,rgba(4,9,20,0.98),rgba(24,20,42,0.96)_52%,rgba(8,23,38,0.98))] px-5 pb-5 pt-5 shadow-[0_24px_58px_rgba(0,0,0,0.54),0_0_36px_rgba(214,168,79,0.11)]">
+    <div className="safe-screen relative h-full w-full overflow-y-auto bg-[radial-gradient(circle_at_18%_0%,rgba(214,168,79,0.13),transparent_26%),linear-gradient(180deg,#030712_0%,#0a1022_40%,#1b1126_100%)] text-[#f8edd2]">
+      <header className="safe-header relative overflow-hidden rounded-b-[34px] border-b border-[#d6a84f]/22 bg-[linear-gradient(145deg,rgba(4,9,20,0.98),rgba(24,20,42,0.96)_52%,rgba(8,23,38,0.98))] pb-5 shadow-[0_24px_58px_rgba(0,0,0,0.54),0_0_36px_rgba(214,168,79,0.11)]">
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),transparent_48%,rgba(0,0,0,0.22))]" />
         <div className="relative flex items-center justify-between">
           <button
             onClick={openMenu}
-            className="grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-white/10 text-[#fff5d8] shadow-lg ring-1 ring-[#d6a84f]/15 transition hover:bg-white/15 active:scale-95"
+            className="safe-hit grid place-items-center rounded-full border border-white/10 bg-white/10 text-[#fff5d8] shadow-lg ring-1 ring-[#d6a84f]/15 transition hover:bg-white/15 active:scale-95"
             type="button"
           >
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
@@ -110,7 +110,7 @@ const HomeScreen: React.FC = () => {
         </p>
       </header>
 
-      <main className="space-y-5 px-4 pt-5">
+      <main className="safe-content space-y-5 pt-5">
         <RoomScene
           equipped={equipped}
           home={home}

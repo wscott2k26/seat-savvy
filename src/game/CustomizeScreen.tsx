@@ -68,7 +68,7 @@ const CustomizeScreen: React.FC<{ onPremium: () => void }> = ({ onPremium }) => 
 
   return (
     <div
-      className="relative h-full w-full overflow-y-auto pb-8 text-[#f8edd2]"
+      className="safe-screen relative h-full w-full overflow-y-auto text-[#f8edd2]"
       style={{ background: selectedTheme }}
     >
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -85,13 +85,13 @@ const CustomizeScreen: React.FC<{ onPremium: () => void }> = ({ onPremium }) => 
         ))}
       </div>
 
-      <header className="relative overflow-hidden rounded-b-[34px] border-b border-[#d6a84f]/20 bg-[linear-gradient(145deg,rgba(7,11,26,0.96),rgba(36,22,51,0.94)_55%,rgba(12,24,48,0.96))] px-5 pb-6 pt-5 shadow-[0_20px_48px_rgba(0,0,0,0.46),0_0_36px_rgba(214,168,79,0.12)]">
+      <header className="safe-header relative overflow-hidden rounded-b-[34px] border-b border-[#d6a84f]/20 bg-[linear-gradient(145deg,rgba(7,11,26,0.96),rgba(36,22,51,0.94)_55%,rgba(12,24,48,0.96))] pb-6 shadow-[0_20px_48px_rgba(0,0,0,0.46),0_0_36px_rgba(214,168,79,0.12)]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_12%,rgba(214,168,79,0.16),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.08),transparent_50%,rgba(0,0,0,0.24))]" />
         <div className="relative flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={openMenu}
-            className="grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-white/10 text-[#f8edd2] shadow-lg ring-1 ring-[#d6a84f]/15 transition hover:bg-white/15 active:scale-95"
+            className="safe-hit grid place-items-center rounded-full border border-white/10 bg-white/10 text-[#f8edd2] shadow-lg ring-1 ring-[#d6a84f]/15 transition hover:bg-white/15 active:scale-95"
             title="Back to levels"
           >
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
@@ -112,7 +112,7 @@ const CustomizeScreen: React.FC<{ onPremium: () => void }> = ({ onPremium }) => 
         </p>
       </header>
 
-      <main className="relative space-y-5 px-4 pt-5">
+      <main className="safe-content relative space-y-5 pt-5">
         <Panel title="Game Theme" subtitle="Changes the overall mood of the menu and studio.">
           <div className="grid grid-cols-2 gap-3">
             {GAME_THEMES.map((theme) => {

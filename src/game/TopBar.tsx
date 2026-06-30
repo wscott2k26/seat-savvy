@@ -10,7 +10,7 @@ const Pill: React.FC<{ children: React.ReactNode; onClick?: () => void; title?: 
     type="button"
     onClick={onClick}
     title={title}
-    className="flex min-h-9 items-center gap-1 rounded-full border border-white/10 bg-[#0b1024]/72 px-3 py-1.5 text-sm font-bold text-[#f8edd2] shadow-[0_10px_26px_rgba(0,0,0,0.32)] ring-1 ring-[#d6a84f]/12 backdrop-blur transition hover:bg-[#121a35]/80 active:scale-95"
+    className="safe-hit flex items-center justify-center gap-1 rounded-full border border-white/10 bg-[#0b1024]/72 px-3 py-1.5 text-sm font-bold text-[#f8edd2] shadow-[0_10px_26px_rgba(0,0,0,0.32)] ring-1 ring-[#d6a84f]/12 backdrop-blur transition hover:bg-[#121a35]/80 active:scale-95"
   >
     {children}
   </button>
@@ -30,7 +30,7 @@ const TopBar: React.FC<{ onHint: () => void; onReset: () => void; onSettings: ()
 }) => {
   const { level, levelStats, progress, openMenu, playSound } = useGame();
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-40 flex items-start justify-between gap-2 p-3">
+    <div className="safe-top-bar pointer-events-none absolute inset-x-0 top-0 z-40 flex items-start justify-between gap-2">
       <div className="pointer-events-auto flex min-w-0 items-center gap-2">
         <Pill onClick={openMenu} title="Levels">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
@@ -46,7 +46,7 @@ const TopBar: React.FC<{ onHint: () => void; onReset: () => void; onSettings: ()
           </div>
         )}
       </div>
-      <div className="pointer-events-auto flex shrink-0 items-center gap-1.5">
+      <div className="pointer-events-auto flex max-w-[52%] shrink-0 flex-wrap items-center justify-end gap-1.5">
         <Pill title="Coins"><Coin /> {progress.coins}</Pill>
         <Pill onClick={onHint} title="Use a hint">
           <Bulb /> {progress.premium ? '∞' : progress.hints}

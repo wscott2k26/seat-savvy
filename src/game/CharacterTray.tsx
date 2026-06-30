@@ -17,7 +17,7 @@ const CharacterTray: React.FC = () => {
   return (
     <div
       data-tray
-      className="relative z-30 w-full rounded-t-[28px] border-t border-[#d6a84f]/24 bg-[linear-gradient(180deg,rgba(18,18,38,0.94),rgba(32,22,45,0.96))] px-3 pb-4 pt-3 text-[#f8edd2] shadow-[0_-16px_42px_rgba(0,0,0,0.38),0_0_28px_rgba(214,168,79,0.08)] backdrop-blur-xl"
+      className="safe-bottom-tray relative z-30 w-full rounded-t-[28px] border-t border-[#d6a84f]/24 bg-[linear-gradient(180deg,rgba(18,18,38,0.94),rgba(32,22,45,0.96))] px-3 pt-3 text-[#f8edd2] shadow-[0_-16px_42px_rgba(0,0,0,0.38),0_0_28px_rgba(214,168,79,0.08)] backdrop-blur-xl"
     >
       <div className="mb-2 flex items-center justify-between px-1">
         <p className="text-xs font-black uppercase tracking-[0.14em] text-[#d6a84f]">

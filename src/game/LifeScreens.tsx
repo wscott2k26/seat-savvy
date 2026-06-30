@@ -43,12 +43,12 @@ const ScreenHeader: React.FC<{
 }> = ({ title, kicker, text, action }) => {
   const { openMenu } = useGame();
   return (
-    <header className="relative overflow-hidden rounded-b-[34px] border-b border-[#d6a84f]/22 bg-[linear-gradient(145deg,rgba(4,9,20,0.98),rgba(29,23,48,0.96)_55%,rgba(8,26,44,0.98))] px-5 pb-5 pt-5 shadow-[0_24px_58px_rgba(0,0,0,0.52),0_0_32px_rgba(214,168,79,0.1)]">
+    <header className="safe-header relative overflow-hidden rounded-b-[34px] border-b border-[#d6a84f]/22 bg-[linear-gradient(145deg,rgba(4,9,20,0.98),rgba(29,23,48,0.96)_55%,rgba(8,26,44,0.98))] pb-5 shadow-[0_24px_58px_rgba(0,0,0,0.52),0_0_32px_rgba(214,168,79,0.1)]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_8%,rgba(214,168,79,0.14),transparent_30%),linear-gradient(180deg,rgba(255,255,255,0.07),transparent_48%,rgba(0,0,0,0.24))]" />
       <div className="relative flex items-center justify-between gap-3">
         <button
           onClick={openMenu}
-          className="grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-white/10 text-[#fff5d8] shadow active:scale-95"
+          className="safe-hit grid place-items-center rounded-full border border-white/10 bg-white/10 text-[#fff5d8] shadow active:scale-95"
           type="button"
         >
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
@@ -71,7 +71,7 @@ export const ShopScreen: React.FC = () => {
   const items = SHOP_ITEMS.filter((item) => item.category === category);
 
   return (
-    <div className="relative h-full w-full overflow-y-auto bg-[linear-gradient(180deg,#050816_0%,#11172b_48%,#271733_100%)] pb-8 text-[#f8edd2]">
+    <div className="safe-screen relative h-full w-full overflow-y-auto bg-[linear-gradient(180deg,#050816_0%,#11172b_48%,#271733_100%)] text-[#f8edd2]">
       <ScreenHeader
         kicker="Design Store"
         title="Shop"
@@ -82,7 +82,7 @@ export const ShopScreen: React.FC = () => {
           </div>
         }
       />
-      <main className="space-y-5 px-4 pt-5">
+      <main className="safe-content space-y-5 pt-5">
         <section className={panelClass}>
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -217,7 +217,7 @@ export const MissionsScreen: React.FC = () => {
   const xp = xpIntoLevel(progress.xp);
 
   return (
-    <div className="relative h-full w-full overflow-y-auto bg-[linear-gradient(180deg,#050816_0%,#13172d_50%,#281735_100%)] pb-8 text-[#f8edd2]">
+    <div className="safe-screen relative h-full w-full overflow-y-auto bg-[linear-gradient(180deg,#050816_0%,#13172d_50%,#281735_100%)] text-[#f8edd2]">
       <ScreenHeader
         kicker="Daily Cozy List"
         title="Missions"
@@ -228,7 +228,7 @@ export const MissionsScreen: React.FC = () => {
           </div>
         }
       />
-      <main className="space-y-5 px-4 pt-5">
+      <main className="safe-content space-y-5 pt-5">
         {!claimedDaily && (
           <section className={panelClass}>
             <div className="flex items-center justify-between gap-3">
@@ -316,7 +316,7 @@ export const AchievementsScreen: React.FC = () => {
   const stars = totalStars(progress.stars);
 
   return (
-    <div className="relative h-full w-full overflow-y-auto bg-[linear-gradient(180deg,#050816_0%,#10172c_48%,#271733_100%)] pb-8 text-[#f8edd2]">
+    <div className="safe-screen relative h-full w-full overflow-y-auto bg-[linear-gradient(180deg,#050816_0%,#10172c_48%,#271733_100%)] text-[#f8edd2]">
       <ScreenHeader
         kicker="Reward Shelf"
         title="Achievements"
@@ -327,7 +327,7 @@ export const AchievementsScreen: React.FC = () => {
           </div>
         }
       />
-      <main className="space-y-5 px-4 pt-5">
+      <main className="safe-content space-y-5 pt-5">
         <section className={panelClass}>
           <div className="grid grid-cols-3 gap-2 text-center text-xs font-black text-[#d9cda9]">
             <span className="rounded-2xl bg-white/8 px-2 py-3">{solved} solved</span>
@@ -381,7 +381,7 @@ export const DailyRewardModal: React.FC<{ onClose: () => void }> = ({
     progress.life.daily.claimedDailyDate === progress.life.daily.date;
 
   return (
-    <div className="fixed inset-0 z-[130] flex items-center justify-center bg-[#030712]/72 p-4 backdrop-blur-md">
+    <div className="safe-modal-padding fixed inset-0 z-[130] flex items-center justify-center bg-[#030712]/72 backdrop-blur-md">
       <div className="ts-pop w-full max-w-sm overflow-hidden rounded-[32px] border border-[#d6a84f]/30 bg-[linear-gradient(160deg,#081124,#21162f_58%,#0c2238)] text-center text-[#f8edd2] shadow-[0_32px_80px_rgba(0,0,0,0.62),0_0_34px_rgba(214,168,79,0.13)]">
         <div className="h-20 bg-[radial-gradient(circle_at_50%_0%,rgba(214,168,79,0.42),transparent_58%),linear-gradient(90deg,rgba(214,168,79,0.18),rgba(255,255,255,0.04),rgba(168,106,120,0.18))]" />
         <div className="-mt-9 px-5 pb-5">
@@ -428,7 +428,7 @@ export const LifeNoticeModal: React.FC = () => {
   return (
     <button
       onClick={dismissNotice}
-      className="fixed left-4 right-4 top-4 z-[140] mx-auto max-w-sm rounded-[26px] border border-[#d6a84f]/34 bg-[linear-gradient(145deg,rgba(6,13,28,0.97),rgba(35,24,48,0.97))] p-4 text-left text-[#f8edd2] shadow-[0_22px_52px_rgba(0,0,0,0.5),0_0_26px_rgba(214,168,79,0.12)] ring-1 ring-white/10 backdrop-blur-md active:scale-[0.99]"
+      className="safe-notice-top fixed z-[140] mx-auto max-w-sm rounded-[26px] border border-[#d6a84f]/34 bg-[linear-gradient(145deg,rgba(6,13,28,0.97),rgba(35,24,48,0.97))] p-4 text-left text-[#f8edd2] shadow-[0_22px_52px_rgba(0,0,0,0.5),0_0_26px_rgba(214,168,79,0.12)] ring-1 ring-white/10 backdrop-blur-md active:scale-[0.99]"
       type="button"
     >
       <div className="flex items-start gap-3">

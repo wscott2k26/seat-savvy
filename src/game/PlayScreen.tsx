@@ -105,7 +105,7 @@ const PlayScreen: React.FC = () => {
 
   return (
     <div
-      className="relative flex h-full w-full flex-col"
+      className="safe-screen relative flex h-full w-full flex-col"
       style={{ background: themeBackground }}
     >
       <div className="relative flex-1 overflow-hidden">
@@ -126,7 +126,7 @@ const PlayScreen: React.FC = () => {
           <button
             type="button"
             onClick={dismissFeedback}
-            className={`absolute left-4 right-4 top-[74px] z-40 rounded-3xl px-4 py-3 text-left text-sm font-extrabold shadow-xl ring-1 backdrop-blur transition active:scale-[0.99] ${
+            className={`safe-hud-top absolute left-4 right-4 z-40 rounded-3xl px-4 py-3 text-left text-sm font-extrabold shadow-xl ring-1 backdrop-blur transition active:scale-[0.99] ${
               feedback.kind === 'bad'
                 ? 'ts-soft-shake bg-[#a86a78]/94 text-[#fff5d8] ring-[#f3a8b6]/30'
                 : feedback.kind === 'good'

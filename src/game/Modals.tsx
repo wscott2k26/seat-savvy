@@ -5,8 +5,8 @@ import type { CompletionRewards } from './lifeData';
 import Avatar from './Avatar';
 
 const Backdrop: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="fixed inset-0 z-[120] flex items-center justify-center bg-[#030712]/72 p-4 backdrop-blur-md">
-    <div className="ts-pop max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-[28px] border border-[#f3c96a]/24 bg-[linear-gradient(160deg,rgba(20,18,40,0.96),rgba(43,26,55,0.96)_52%,rgba(13,25,45,0.96))] p-6 text-[#f8edd2] shadow-[0_28px_70px_rgba(0,0,0,0.55),0_0_36px_rgba(214,168,79,0.12)] ring-1 ring-white/10">
+  <div className="safe-modal-padding fixed inset-0 z-[120] flex items-center justify-center bg-[#030712]/72 backdrop-blur-md">
+    <div className="safe-modal-panel ts-pop w-full max-w-md overflow-y-auto rounded-[28px] border border-[#f3c96a]/24 bg-[linear-gradient(160deg,rgba(20,18,40,0.96),rgba(43,26,55,0.96)_52%,rgba(13,25,45,0.96))] p-6 text-[#f8edd2] shadow-[0_28px_70px_rgba(0,0,0,0.55),0_0_36px_rgba(214,168,79,0.12)] ring-1 ring-white/10">
       {children}
     </div>
   </div>
