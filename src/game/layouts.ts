@@ -34,16 +34,16 @@ export const classroomLayout: Seat[] = [
 export const coffeeLayout: Seat[] = [
   S('W1', 24, 34, ['window', 'sunlight'], ['W2']),
   S('W2', 44, 34, ['window'], ['W1']),
-  S('C1', 70, 38, ['music', 'food'], ['C2']),
-  S('C2', 70, 58, ['music', 'food'], ['C1']),
-  S('S1', 30, 70, ['quiet'], ['S2']),
-  S('S2', 50, 70, ['quiet'], ['S1']),
+  S('C1', 70, 38, ['music', 'food', 'front'], ['C2']),
+  S('C2', 70, 58, ['music', 'food', 'back'], ['C1']),
+  S('S1', 30, 70, ['quiet', 'front'], ['S2']),
+  S('S2', 50, 70, ['quiet', 'back'], ['S1']),
 ];
 
 // ---- RESTAURANT ----
 export const restaurantLayout: Seat[] = [
-  S('B1', 26, 36, ['window', 'quiet'], ['B2']),
-  S('B2', 26, 58, ['window', 'quiet'], ['B1']),
+  S('B1', 26, 36, ['window', 'quiet', 'front'], ['B2']),
+  S('B2', 26, 58, ['window', 'quiet', 'back'], ['B1']),
   S('T1', 54, 46, ['food'], ['T2']),
   S('T2', 74, 46, ['food', 'aisle'], ['T1']),
   S('B3', 50, 74, ['music'], ['B4']),
@@ -76,8 +76,8 @@ export const weddingLayout: Seat[] = [
   S('H2', 50, 34, ['quiet'], ['H1']),
   S('M1', 30, 56, ['music'], ['M2']),
   S('M2', 52, 56, ['music', 'sunlight'], ['M1']),
-  S('F1', 30, 78, ['food'], ['F2']),
-  S('F2', 52, 78, ['food'], ['F1']),
+  S('F1', 30, 78, ['food', 'front'], ['F2']),
+  S('F2', 52, 78, ['food', 'back'], ['F1']),
 ];
 
 // ---- CRUISE SHIP: sun deck, ocean-view, pool bar, quiet lounge ----
@@ -86,6 +86,6 @@ export const cruiseLayout: Seat[] = [
   S('D2', 50, 32, ['window'], ['D1']),
   S('P1', 30, 54, ['music'], ['P2']),
   S('P2', 52, 54, ['music', 'food'], ['P1']),
-  S('Q1', 30, 76, ['quiet'], ['Q2']),
-  S('Q2', 52, 76, ['quiet'], ['Q1']),
+  S('Q1', 30, 76, ['quiet', 'front'], ['Q2']),
+  S('Q2', 52, 76, ['quiet', 'back'], ['Q1']),
 ];

@@ -69,14 +69,20 @@ const objectsFor = (env: string) => {
 };
 
 const WorldStage: React.FC = () => {
-  const { level, charBySeat, violations } = useGame();
+  const { level, charBySeat, violations, progress } = useGame();
   if (!level) return null;
   const charById = Object.fromEntries(level.characters.map((c) => [c.id, c]));
   const nameOf = (id: string) => charById[id]?.name ?? '?';
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      <EnvScene env={level.env} />
+      <EnvScene
+        env={level.env}
+        artStyle={progress.settings.environmentArt}
+        environmentPalette={
+          progress.customization.envPalettes[level.env] ?? 'default'
+        }
+      />
       {objectsFor(level.env)}
       {level.seats.map((seat) => {
         const occId = charBySeat[seat.id];

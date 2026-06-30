@@ -28,7 +28,7 @@ export const useDrag = () => {
 export const DragLayer: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { placeCharacter, unplace } = useGame();
+  const { placeCharacter, playSound, progress, unplace } = useGame();
   const floatRef = useRef<HTMLDivElement>(null);
   const payloadRef = useRef<DragPayload | null>(null);
   const [dragging, setDragging] = useState<DragPayload | null>(null);
@@ -75,6 +75,7 @@ export const DragLayer: React.FC<{ children: React.ReactNode }> = ({
   const startDrag = useCallback(
     (payload: DragPayload, e: React.PointerEvent) => {
       e.preventDefault();
+      playSound('pickup');
       payloadRef.current = payload;
       setDragging(payload);
       const onMove = (ev: PointerEvent) => move(ev.clientX, ev.clientY);
@@ -88,7 +89,7 @@ export const DragLayer: React.FC<{ children: React.ReactNode }> = ({
       // place immediately at start point
       requestAnimationFrame(() => move(e.clientX, e.clientY));
     },
-    [move, endDrag],
+    [move, endDrag, playSound],
   );
 
   return (
@@ -101,7 +102,12 @@ export const DragLayer: React.FC<{ children: React.ReactNode }> = ({
           style={{ left: -100, top: -100 }}
         >
           <div className="ts-drag-pop rounded-full bg-white/90 p-1 shadow-2xl ring-2 ring-white">
-            <Avatar hue={dragging.hue} mood="happy" size={64} />
+            <Avatar
+              hue={dragging.hue}
+              mood="happy"
+              size={64}
+              {...progress.customization.characterAvatar}
+            />
           </div>
         </div>
       )}

@@ -148,6 +148,30 @@
 @keyframes tsSit { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
 .ts-sit { animation: tsSit 3.2s ease-in-out infinite; }
 
+@keyframes tsAvatarBounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+.ts-avatar-bounce { animation: tsAvatarBounce 2.4s ease-in-out infinite; }
+
+@keyframes tsAvatarFloat { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-4px) rotate(1deg); } }
+.ts-avatar-float { animation: tsAvatarFloat 3.8s ease-in-out infinite; }
+
+@keyframes tsAvatarSparkle {
+  0%,100% { filter: drop-shadow(0 0 0 rgba(214,168,79,0)); }
+  50% { filter: drop-shadow(0 0 10px rgba(214,168,79,0.52)); }
+}
+.ts-avatar-sparkle { animation: tsAvatarSparkle 2.8s ease-in-out infinite; }
+
+@keyframes tsAvatarGlow {
+  0%,100% { filter: drop-shadow(0 0 4px rgba(159,182,217,0.18)); }
+  50% { filter: drop-shadow(0 0 14px rgba(159,182,217,0.55)); }
+}
+.ts-avatar-glow { animation: tsAvatarGlow 3s ease-in-out infinite; }
+
+@keyframes tsPetIdle {
+  0%,100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-4px) rotate(1deg); }
+}
+.ts-pet-idle { animation: tsPetIdle 3.4s ease-in-out infinite; }
+
 /* drag pop */
 @keyframes tsDragPop { from { transform: scale(0.7); } to { transform: scale(1.06); } }
 .ts-drag-pop { animation: tsDragPop 0.18s ease-out forwards; }
@@ -182,6 +206,21 @@
 @keyframes tsFloat { 0% { transform: translateY(10px) translateX(0); opacity: 0; } 20% { opacity: 0.7; } 100% { transform: translateY(-110%) translateX(20px); opacity: 0; } }
 .ts-particle { position: absolute; bottom: 0; width: 6px; height: 6px; border-radius: 9999px; background: rgba(255,255,255,0.7); animation: tsFloat linear infinite; }
 .ts-dust { width: 5px; height: 5px; background: rgba(255,255,255,0.55); }
+.ts-stardust {
+  width: 3px;
+  height: 3px;
+  background: rgba(214,168,79,0.72);
+  box-shadow: 0 0 12px rgba(214,168,79,0.65);
+}
+
+@keyframes tsSoftShake {
+  0%,100% { transform: translateX(0); }
+  18% { transform: translateX(-5px); }
+  36% { transform: translateX(4px); }
+  54% { transform: translateX(-3px); }
+  72% { transform: translateX(2px); }
+}
+.ts-soft-shake { animation: tsSoftShake 0.34s ease-out both; }
 
 /* moving scenery (bus windows) */
 @keyframes tsScenery { from { transform: translateX(0); } to { transform: translateX(-200px); } }
@@ -198,6 +237,81 @@
   animation: tsConfetti 0.65s ease-out both;
 }
 
+@keyframes tsCelebrationFall {
+  0% { transform: translateY(-14vh) rotate(0deg) scale(0.9); opacity: 0; }
+  12% { opacity: 1; }
+  100% { transform: translateY(124vh) rotate(620deg) scale(1); opacity: 0; }
+}
+
+@keyframes tsCelebrationRise {
+  0% { transform: translateY(0) scale(0.8); opacity: 0; }
+  16% { opacity: 0.85; }
+  100% { transform: translateY(-118vh) scale(1.35); opacity: 0; }
+}
+
+@keyframes tsCelebrationBurst {
+  0% { transform: translateY(18vh) scale(0.4) rotate(0deg); opacity: 0; }
+  18% { opacity: 1; }
+  100% { transform: translateY(-82vh) scale(1.25) rotate(260deg); opacity: 0; }
+}
+
+@keyframes tsCelebrationCard {
+  0% { transform: translateY(12px) scale(0.86); opacity: 0; }
+  22% { transform: translateY(0) scale(1.04); opacity: 1; }
+  78% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-8px) scale(0.98); opacity: 0; }
+}
+
+.ts-celebration-card {
+  animation: tsCelebrationCard 1.42s cubic-bezier(.2,1.2,.3,1) both;
+}
+
+.ts-celebration-tape,
+.ts-celebration-ribbon {
+  border-radius: 999px;
+  box-shadow: 0 0 16px rgba(246,217,141,0.26);
+  animation: tsCelebrationFall 1.35s ease-in both;
+}
+
+.ts-celebration-ribbon {
+  border-radius: 999px 999px 4px 4px;
+  transform-origin: center top;
+}
+
+.ts-celebration-bubble {
+  border: 1px solid rgba(255,245,216,0.72);
+  border-radius: 9999px;
+  background: rgba(255,255,255,0.12) !important;
+  box-shadow: inset 0 0 8px rgba(255,255,255,0.34), 0 0 18px rgba(159,182,217,0.28);
+  animation: tsCelebrationRise 1.45s ease-out both;
+}
+
+.ts-celebration-sparkle,
+.ts-celebration-starbit {
+  clip-path: polygon(50% 0%, 61% 36%, 98% 36%, 68% 57%, 79% 92%, 50% 70%, 21% 92%, 32% 57%, 2% 36%, 39% 36%);
+  box-shadow: 0 0 18px rgba(246,217,141,0.38);
+  animation: tsCelebrationBurst 1.28s ease-out both;
+}
+
+.ts-celebration-starbit {
+  animation-name: tsCelebrationFall;
+}
+
 /* hide scrollbars in tray for clean look */
 .overflow-x-auto::-webkit-scrollbar { height: 6px; }
 .overflow-x-auto::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 9999px; }
+
+.tw-reduced-motion *,
+.tw-reduced-motion *::before,
+.tw-reduced-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+  transition-duration: 0.001ms !important;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid rgba(249, 115, 22, 0.45);
+  outline-offset: 2px;
+}

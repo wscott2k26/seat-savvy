@@ -4,6 +4,7 @@ import Avatar from './Avatar';
 import ClueIcon from './ClueIcon';
 import { clueIcon, clueText } from './constraints';
 import { useDrag } from './DragLayer';
+import { useGame } from './GameProvider';
 
 interface Props {
   seat: SeatType;
@@ -24,9 +25,11 @@ const seatTint: Record<EnvironmentId, string> = {
   cruise: '#2c6f8a',
 };
 
-const Seat: React.FC<Props> = ({ seat, env, occupant, violated }) => {
+const Seat: React.FC<Props> = ({ seat, env, occupant, violated, nameOf }) => {
   const { startDrag } = useDrag();
+  const { progress } = useGame();
   const tint = seatTint[env];
+  const occupantName = occupant ? nameOf(occupant.id) : '';
 
   return (
     <div
@@ -55,7 +58,12 @@ const Seat: React.FC<Props> = ({ seat, env, occupant, violated }) => {
               aria-label={`Move ${occupant.name}`}
             >
               <div className="ts-sit rounded-full bg-white/80 p-0.5 shadow-md ring-1 ring-white">
-                <Avatar hue={occupant.hue} size={52} mood={violated ? 'sad' : 'happy'} />
+                <Avatar
+                  hue={occupant.hue}
+                  size={52}
+                  mood={violated ? 'sad' : 'happy'}
+                  {...progress.customization.characterAvatar}
+                />
               </div>
             </button>
           )}
@@ -67,6 +75,11 @@ const Seat: React.FC<Props> = ({ seat, env, occupant, violated }) => {
             }`}
           >
             {violated ? <Cross /> : <Check />}
+          </div>
+        )}
+        {occupant && (
+          <div className="pointer-events-none absolute left-1/2 top-[4.35rem] z-20 max-w-[6.5rem] -translate-x-1/2 rounded-full border border-[#f2c66d]/35 bg-[#071022]/88 px-2.5 py-0.5 text-center text-[10px] font-extrabold leading-tight text-[#fff5d8] shadow-[0_8px_18px_rgba(0,0,0,0.32),0_0_14px_rgba(214,168,79,0.16)] backdrop-blur">
+            <span className="block truncate">{occupantName}</span>
           </div>
         )}
       </div>
