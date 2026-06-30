@@ -7,6 +7,12 @@ import { StoryModal, TutorialModal, WinModal } from './Modals';
 import { SettingsModal, PremiumModal } from './Panels';
 import { GAME_THEME_BACKGROUNDS } from './customization';
 import { AccountModal } from './AccountModal';
+import {
+  formatClock,
+  timeGoalSeconds,
+  timeLimitSeconds,
+  type PlayMode,
+} from './timing';
 
 type CelebrationKind = 'ticker' | 'sparkle' | 'ribbon' | 'bubbles' | 'stars';
 
@@ -20,8 +26,11 @@ const CELEBRATIONS: CelebrationKind[] = [
 
 const PlayScreen: React.FC = () => {
   const {
+    beginLevelRun,
     level,
+    levelStartedAt,
     openCustomize,
+    playMode,
     progress,
     solved,
     startLevel,
@@ -36,6 +45,7 @@ const PlayScreen: React.FC = () => {
     feedback,
     dismissFeedback,
     markTutorialSeen,
+    triggerHurryCue,
   } = useGame();
 
   const [showStory, setShowStory] = useState(true);
@@ -45,7 +55,9 @@ const PlayScreen: React.FC = () => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [showAccount, setShowAccount] = useState(false);
   const [celebration, setCelebration] = useState<CelebrationKind | null>(null);
+  const [clockNow, setClockNow] = useState(() => Date.now());
   const winHandled = useRef(false);
+  const hurryHandled = useRef(false);
   const completeLevelRef = useRef(completeLevel);
   const winTimer = useRef<number | null>(null);
 
@@ -68,8 +80,38 @@ const PlayScreen: React.FC = () => {
     setShowStory(true);
     setShowWin(false);
     setCelebration(null);
+    setClockNow(Date.now());
     winHandled.current = false;
+    hurryHandled.current = false;
   }, [level?.id]);
+
+  useEffect(() => {
+    if (showStory || showWin || solved) return;
+    const timer = window.setInterval(() => setClockNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [showStory, showWin, solved]);
+
+  useEffect(() => {
+    if (!level || showStory || showWin || solved || hurryHandled.current) return;
+    const elapsedSeconds = (clockNow - levelStartedAt) / 1000;
+    if (elapsedSeconds < timeGoalSeconds(level)) return;
+
+    hurryHandled.current = true;
+    triggerHurryCue(
+      playMode === 'timed'
+        ? 'Hurry! The top-star time goal is gone, but you can still finish the timed challenge.'
+        : 'Hurry! The top-star time goal is gone, but a clean solve can still earn strong rewards.',
+    );
+  }, [
+    clockNow,
+    level,
+    levelStartedAt,
+    playMode,
+    showStory,
+    showWin,
+    solved,
+    triggerHurryCue,
+  ]);
 
   useEffect(() => {
     if (solved && !winHandled.current) {
@@ -102,10 +144,23 @@ const PlayScreen: React.FC = () => {
   const themeBackground =
     GAME_THEME_BACKGROUNDS[progress.customization.gameTheme] ??
     GAME_THEME_BACKGROUNDS['midnight-gold'];
+  const elapsedSeconds = Math.max(0, (clockNow - levelStartedAt) / 1000);
+  const goalRemaining = Math.max(0, timeGoalSeconds(level) - elapsedSeconds);
+  const limitRemaining = Math.max(0, timeLimitSeconds(level) - elapsedSeconds);
+  const timerLabel =
+    showStory
+      ? undefined
+      : playMode === 'timed'
+        ? `${formatClock(limitRemaining)} limit`
+        : `${formatClock(goalRemaining)} star`;
+  const timerUrgent =
+    !showStory &&
+    (goalRemaining <= 0 || (playMode === 'timed' && limitRemaining <= 20));
 
   return (
     <div
       data-play-screen
+      data-seat-count={level.seats.length}
       className="safe-screen relative flex h-full w-full flex-col"
       style={{ background: themeBackground }}
     >
@@ -119,6 +174,8 @@ const PlayScreen: React.FC = () => {
           }}
           onReset={resetLevel}
           onSettings={() => setShowSettings(true)}
+          timerLabel={timerLabel}
+          timerUrgent={timerUrgent}
         />
         {celebration && !showWin && (
           <CompletionCelebration kind={celebration} />
@@ -144,7 +201,14 @@ const PlayScreen: React.FC = () => {
       <CharacterTray />
 
       {showStory && (
-        <StoryModal level={level} onStart={() => setShowStory(false)} />
+        <StoryModal
+          level={level}
+          onStart={(mode: PlayMode) => {
+            beginLevelRun(mode);
+            setClockNow(Date.now());
+            setShowStory(false);
+          }}
+        />
       )}
       {showWin && (
         <WinModal

@@ -21,6 +21,11 @@ import {
   type CustomizationState,
 } from './customization';
 import {
+  timeGoalSeconds,
+  timeLimitSeconds,
+  type PlayMode,
+} from './timing';
+import {
   ACHIEVEMENTS,
   DAILY_MISSIONS,
   DEFAULT_LIFE_PROGRESS,
@@ -39,7 +44,7 @@ import {
   type LifeProgress,
 } from './lifeData';
 
-const FREE_LEVELS = 30;
+const FREE_LEVELS = 39;
 
 export interface GameSettings {
   musicOn: boolean;
@@ -159,6 +164,8 @@ interface GameCtx {
   lastRewards: CompletionRewards | null;
   feedback: FeedbackMessage | null;
   notice: LifeNotice | null;
+  playMode: PlayMode;
+  levelStartedAt: number;
   openMenu: () => void;
   openCustomize: () => void;
   openHome: () => void;
@@ -166,6 +173,7 @@ interface GameCtx {
   openMissions: () => void;
   openAchievements: () => void;
   startLevel: (id: number) => void;
+  beginLevelRun: (mode: PlayMode) => void;
   placeCharacter: (charId: string, seatId: string) => void;
   unplace: (charId: string) => void;
   applyHint: () => boolean;
@@ -189,6 +197,7 @@ interface GameCtx {
   resetProgress: () => void;
   dismissFeedback: () => void;
   dismissNotice: () => void;
+  triggerHurryCue: (text: string) => void;
   playSound: (sound: GameSound) => void;
   testSound: () => void;
 }
@@ -259,10 +268,30 @@ const EMPTY_STATS: LevelStats = {
   moves: 0,
 };
 
-function starsFor(stats: LevelStats): number {
-  if (stats.hintsUsed === 0 && stats.mistakes === 0) return 3;
-  if (stats.hintsUsed <= 1 && stats.mistakes <= 2) return 2;
-  return 1;
+function starsFor(
+  stats: LevelStats,
+  level?: Level | null,
+  elapsedMs = 0,
+  mode: PlayMode = 'relaxed',
+): number {
+  let stars =
+    stats.hintsUsed === 0 && stats.mistakes === 0
+      ? 3
+      : stats.hintsUsed <= 1 && stats.mistakes <= 2
+        ? 2
+        : 1;
+
+  if (!level || elapsedMs <= 0) return stars;
+
+  const elapsedSeconds = elapsedMs / 1000;
+  if (elapsedSeconds > timeGoalSeconds(level)) {
+    stars = Math.min(stars, 2);
+  }
+  if (mode === 'timed' && elapsedSeconds > timeLimitSeconds(level)) {
+    stars = Math.min(stars, 1);
+  }
+
+  return stars;
 }
 
 function canStartLevel(id: number, progress: Progress): boolean {
@@ -272,13 +301,17 @@ function canStartLevel(id: number, progress: Progress): boolean {
 }
 
 function rewardsFor(
+  level: Level,
   stats: LevelStats,
   stars: number,
   alreadyCompleted: boolean,
   elapsedMs: number,
   characterCount: number,
+  mode: PlayMode,
 ): Omit<CompletionRewards, 'levelUp' | 'achievements'> {
   const elapsedSeconds = Math.max(1, Math.round(elapsedMs / 1000));
+  const goalSeconds = timeGoalSeconds(level);
+  const limitSeconds = timeLimitSeconds(level);
   if (alreadyCompleted) {
     return {
       stars,
@@ -295,26 +328,24 @@ function rewardsFor(
   let xp = 85 + stars * 30;
 
   const speedBonus =
-    elapsedMs <= 45_000
-      ? 45
-      : elapsedMs <= 90_000
-      ? 30
-      : stats.moves <= characterCount + 2
-      ? 20
-      : elapsedMs <= 150_000
-      ? 12
-      : 0;
+    elapsedSeconds <= goalSeconds
+      ? 40 + Math.max(0, characterCount - 6) * 7
+      : elapsedSeconds <= limitSeconds
+        ? 22 + Math.max(0, characterCount - 6) * 4
+        : stats.moves <= characterCount + 2
+          ? 14
+          : 0;
   if (speedBonus > 0) {
     coins += speedBonus;
     xp += Math.round(speedBonus / 2);
     const speedLabel =
-      speedBonus >= 45
-        ? 'Lightning solve'
-        : speedBonus >= 30
-        ? 'Quick solve'
-        : speedBonus >= 20
-        ? 'Efficient solve'
-        : 'Steady solve';
+      elapsedSeconds <= goalSeconds
+        ? mode === 'timed'
+          ? 'Timed clear'
+          : 'Time goal'
+        : elapsedSeconds <= limitSeconds
+          ? 'Hurry finish'
+          : 'Efficient solve';
     bonuses.push(`${speedLabel} +${speedBonus}`);
   }
   if (stats.hintsUsed === 0) {
@@ -484,6 +515,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
   const [placement, setPlacement] = useState<Record<string, string>>({});
   const [levelStats, setLevelStats] = useState<LevelStats>(EMPTY_STATS);
   const [levelStartedAt, setLevelStartedAt] = useState(() => Date.now());
+  const [playMode, setPlayMode] = useState<PlayMode>('relaxed');
   const [lastRewards, setLastRewards] = useState<CompletionRewards | null>(null);
   const [feedback, setFeedback] = useState<FeedbackMessage | null>(null);
   const [notice, setNotice] = useState<LifeNotice | null>(null);
@@ -653,11 +685,26 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
     setPlacement({});
     setLevelStats(EMPTY_STATS);
     setLevelStartedAt(Date.now());
+    setPlayMode('relaxed');
     setLastRewards(null);
     setFeedback(null);
     setScreen('play');
     getAudioEngine().sync(progress.settings, lv.env);
   }, [playSound, progress, triggerHaptic]);
+
+  const beginLevelRun = useCallback((mode: PlayMode) => {
+    setPlayMode(mode);
+    setLevelStartedAt(Date.now());
+    setFeedback({
+      kind: mode === 'timed' ? 'hint' : 'info',
+      text:
+        mode === 'timed'
+          ? 'Timed challenge started. Seat everyone before the countdown runs out.'
+          : 'Relaxed puzzle started. Beat the time goal for the best rewards.',
+    });
+    playSound(mode === 'timed' ? 'hint' : 'button');
+    triggerHaptic('tap');
+  }, [playSound, triggerHaptic]);
 
   const placeCharacter = useCallback((charId: string, seatId: string) => {
     setPlacement((prev) => {
@@ -781,16 +828,25 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
     triggerHaptic,
   ]);
 
+  const triggerHurryCue = useCallback((text: string) => {
+    setFeedback({ kind: 'hint', text });
+    playSound('hint');
+    triggerHaptic('tap');
+  }, [playSound, triggerHaptic]);
+
   const completeLevel = useCallback(() => {
     if (!level) return;
-    const stars = starsFor(levelStats);
+    const elapsedMs = Date.now() - levelStartedAt;
+    const stars = starsFor(levelStats, level, elapsedMs, playMode);
     const alreadyCompleted = progress.completed.includes(level.id);
     const baseRewards = rewardsFor(
+      level,
       levelStats,
       stars,
       alreadyCompleted,
-      Date.now() - levelStartedAt,
+      elapsedMs,
       level.characters.length,
+      playMode,
     );
     const beforeLevel = playerLevelForXp(progress.xp);
     const afterLevel = playerLevelForXp(progress.xp + baseRewards.xp);
@@ -854,7 +910,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
       }
       return achievementResult.progress;
     });
-  }, [level, levelStartedAt, levelStats, playSound, progress.completed, progress.xp, triggerHaptic]);
+  }, [level, levelStartedAt, levelStats, playMode, playSound, progress.completed, progress.xp, triggerHaptic]);
 
   const isUnlocked = useCallback(
     (id: number) => {
@@ -1201,10 +1257,12 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
     solved,
     canonical,
     levelStats,
-    currentStars: starsFor(levelStats),
+    currentStars: starsFor(levelStats, level, Date.now() - levelStartedAt, playMode),
     lastRewards,
     feedback,
     notice,
+    playMode,
+    levelStartedAt,
     openMenu,
     openCustomize,
     openHome,
@@ -1212,6 +1270,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
     openMissions,
     openAchievements,
     startLevel,
+    beginLevelRun,
     placeCharacter,
     unplace,
     applyHint,
@@ -1233,6 +1292,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
     resetProgress,
     dismissFeedback,
     dismissNotice,
+    triggerHurryCue,
     playSound,
     testSound,
   };

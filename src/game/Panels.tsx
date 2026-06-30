@@ -269,7 +269,6 @@ export const SettingsModal: React.FC<{
 };
 
 export const PremiumModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const { setProgress } = useGame();
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [sms, setSms] = useState(true);
@@ -329,15 +328,14 @@ export const PremiumModal: React.FC<{ onClose: () => void }> = ({ onClose }) => 
           </li>
         ))}
       </ul>
-      <button
-        onClick={() => {
-          setProgress((p) => ({ ...p, premium: true }));
-          onClose();
-        }}
-        className="mt-5 w-full rounded-2xl bg-gradient-to-r from-[#d6a84f] via-[#f0c76a] to-[#a86a78] py-3 text-lg font-extrabold text-[#15101f] shadow-[0_14px_34px_rgba(214,168,79,0.25)] transition hover:-translate-y-0.5 active:scale-95"
-      >
-      Unlock the Full Adventure — $4.99
-      </button>
+      <div className="mt-5 rounded-2xl border border-[#d6a84f]/30 bg-[#d6a84f]/12 px-4 py-3 text-left shadow-[0_14px_34px_rgba(214,168,79,0.14)]">
+        <p className="text-sm font-black text-[#f6d98d]">
+          Full Adventure purchase coming soon
+        </p>
+        <p className="mt-1 text-xs font-semibold leading-relaxed text-[#d9cda9]">
+          Premium chapters are visible now, but real App Store unlocks will stay disabled until StoreKit purchases are configured.
+        </p>
+      </div>
 
       <div className="mt-5 rounded-3xl border border-white/10 bg-[#0d1930]/62 p-4 shadow-inner">
         {sent ? (

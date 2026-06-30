@@ -9,33 +9,27 @@ import {
   totalStars,
   xpIntoLevel,
 } from './lifeData';
+import { locationFor } from './locations';
+import type { Level } from './types';
 
-const ENV_META: Record<string, { label: string; from: string; to: string; glow: string }> = {
-  bus: { label: 'Bus', from: '#15263f', to: '#314a50', glow: '#d6a84f' },
-  classroom: { label: 'Classroom', from: '#211930', to: '#493a56', glow: '#c7a66a' },
-  coffee: { label: 'Cafe', from: '#251a2d', to: '#60402f', glow: '#d6a84f' },
-  restaurant: { label: 'Dinner', from: '#1d142b', to: '#65324d', glow: '#c9868f' },
-  theater: { label: 'Theater', from: '#11152b', to: '#342352', glow: '#a99ad6' },
-  airport: { label: 'Airport', from: '#102037', to: '#31516c', glow: '#9fb6d9' },
-  wedding: { label: 'Wedding', from: '#21172d', to: '#6a4058', glow: '#d6a84f' },
-  cruise: { label: 'Cruise', from: '#0d2035', to: '#216073', glow: '#9fd1d9' },
+const chapterFor = (level: Level) => {
+  if (level.characters.length >= 14) return 'Expert Rush - 14 Seat Challenges';
+  if (level.characters.length >= 12) return 'Hard Crowds - 12 Seat Rooms';
+  if (level.characters.length >= 10) return 'Medium Rooms - 10 Seat Puzzles';
+  if (level.id <= 5) return 'Chapter 1 - First Steps';
+  if (level.id <= 10) return 'Chapter 2 - Easy Errands';
+  if (level.id <= 15) return 'Chapter 3 - Cozy Mix-Ups';
+  if (level.id <= 30) return 'Chapter 4 - Free Story Collection';
+  if (level.id <= 39) return 'Chapter 5 - Final Six-Seat Stories';
+  return 'Premium Expansion';
 };
 
-const chapterFor = (id: number) => {
-  if (id <= 5) return 'Chapter 1 - First Steps';
-  if (id <= 10) return 'Chapter 2 - Easy Errands';
-  if (id <= 15) return 'Chapter 3 - Medium Mix-Ups';
-  if (id <= 20) return 'Chapter 4 - Clever Crowds';
-  if (id <= 30) return 'Chapter 5 - Free Story Collection';
-  return 'Chapter 6 - Full Adventure';
-};
-
-const difficultyFor = (id: number) => {
-  if (id <= 5) return 'Beginner';
-  if (id <= 10) return 'Easy';
-  if (id <= 15) return 'Medium';
-  if (id <= 20) return 'Hard';
-  return 'Expert';
+const difficultyFor = (level: Level) => {
+  if (level.characters.length >= 14) return 'Expert';
+  if (level.characters.length >= 12) return 'Hard';
+  if (level.characters.length >= 10) return 'Medium';
+  if (level.id <= 5) return 'Beginner';
+  return 'Easy';
 };
 
 const LevelSelect: React.FC<{
@@ -69,7 +63,7 @@ const LevelSelect: React.FC<{
   const showPremiumNudge =
     !progress.premium && completedCount >= Math.max(0, freeLevels - 5);
   const grouped = levels.reduce<Record<string, typeof levels>>((acc, level) => {
-    const chapter = chapterFor(level.id);
+    const chapter = chapterFor(level);
     acc[chapter] = acc[chapter] ?? [];
     acc[chapter].push(level);
     return acc;
@@ -200,7 +194,7 @@ const LevelSelect: React.FC<{
                 {chapterLevels.map((lv) => {
                   const unlocked = isUnlocked(lv.id);
                   const done = progress.completed.includes(lv.id);
-                  const meta = ENV_META[lv.env];
+                  const meta = locationFor(lv.env);
                   const stars = progress.stars[String(lv.id)] ?? 0;
                   return (
                     <button
@@ -249,7 +243,7 @@ const LevelSelect: React.FC<{
                       )}
                       <div className="relative mt-1 flex items-center justify-between">
                         <span className="rounded-full border border-white/10 bg-white/12 px-2 py-0.5 text-[10px] font-extrabold text-[#f6d98d]">
-                          {difficultyFor(lv.id)}
+                          {difficultyFor(lv)}
                         </span>
                         <StarMeter stars={stars} small />
                       </div>

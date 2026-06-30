@@ -1,3 +1,6 @@
+import { sceneForLocation, type SceneFamily } from './locations';
+import type { EnvironmentId } from './types';
+
 export interface AudioPreferences {
   musicOn: boolean;
   sfxOn: boolean;
@@ -22,19 +25,11 @@ export type GameSound =
   | 'lock'
   | 'unlock';
 
-export type AudioEnvironment =
-  | 'bus'
-  | 'classroom'
-  | 'coffee'
-  | 'restaurant'
-  | 'theater'
-  | 'airport'
-  | 'wedding'
-  | 'cruise';
+export type AudioEnvironment = EnvironmentId;
 
 const AUDIO_EXTENSIONS = ['mp3', 'ogg'] as const;
 
-const AMBIENT_BY_ENV: Record<AudioEnvironment, string> = {
+const AMBIENT_BY_ENV: Record<SceneFamily, string> = {
   bus: 'bus-ride',
   classroom: 'classroom',
   coffee: 'cafe-room',
@@ -90,7 +85,7 @@ class BrowserAudioEngine {
     if (preferences.ambientOn && environment) {
       this.ensureLoop(
         'ambient',
-        `/audio/ambient/${AMBIENT_BY_ENV[environment]}`,
+        `/audio/ambient/${AMBIENT_BY_ENV[sceneForLocation(environment)]}`,
         preferences.ambientVolume,
       );
     } else {
@@ -110,7 +105,7 @@ class BrowserAudioEngine {
     this.sync(preferences, environment);
     const primary = '/audio/sfx/button';
     const fallback = environment
-      ? `/audio/ambient/${AMBIENT_BY_ENV[environment]}`
+      ? `/audio/ambient/${AMBIENT_BY_ENV[sceneForLocation(environment)]}`
       : '/audio/ambient/rain';
     this.playOneShot(primary, preferences.sfxVolume, () => {
       this.playOneShot(fallback, preferences.ambientVolume, undefined, 1400);

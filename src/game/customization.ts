@@ -1,4 +1,5 @@
 import type { EnvironmentId } from './types';
+export { ENVIRONMENT_LABELS } from './locations';
 
 export type GameThemeId =
   | 'classic-cozy'
@@ -294,17 +295,6 @@ export const GAME_THEME_BACKGROUNDS: Record<GameThemeId, string> = {
     'linear-gradient(180deg,#092b42 0%,#0d5d7c 38%,#d9875f 74%,#2e1831 100%)',
   'forest-calm':
     'linear-gradient(180deg,#06140f 0%,#0f241d 42%,#2f6f53 76%,#101827 100%)',
-};
-
-export const ENVIRONMENT_LABELS: Record<EnvironmentId, string> = {
-  bus: 'Bus',
-  classroom: 'Classroom',
-  coffee: 'Coffee Shop',
-  restaurant: 'Restaurant',
-  theater: 'Movie Theater',
-  airport: 'Airport',
-  wedding: 'Wedding',
-  cruise: 'Cruise Ship',
 };
 
 export function isUnlocked(

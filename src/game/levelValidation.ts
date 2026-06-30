@@ -5,6 +5,7 @@ import type {
   Level,
   SeatAttr,
 } from './types';
+import { ENVIRONMENT_IDS } from './types';
 import { findSolutions } from './solver';
 
 const VALID_SEAT_ATTRS: SeatAttr[] = [
@@ -27,16 +28,7 @@ const VALID_CONSTRAINT_TYPES: ConstraintType[] = [
   'notBeside',
 ];
 
-const VALID_ENVIRONMENTS: EnvironmentId[] = [
-  'bus',
-  'classroom',
-  'coffee',
-  'restaurant',
-  'theater',
-  'airport',
-  'wedding',
-  'cruise',
-];
+const VALID_ENVIRONMENTS: readonly EnvironmentId[] = ENVIRONMENT_IDS;
 
 const CHARACTER_SEAT_FIELDS = [
   'seat',

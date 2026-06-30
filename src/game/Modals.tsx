@@ -3,6 +3,12 @@ import type { Level } from './types';
 import type { LevelStats } from './GameProvider';
 import type { CompletionRewards } from './lifeData';
 import Avatar from './Avatar';
+import {
+  formatClock,
+  timeGoalSeconds,
+  timeLimitSeconds,
+  type PlayMode,
+} from './timing';
 
 const Backdrop: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="safe-modal-padding fixed inset-0 z-[120] flex items-center justify-center bg-[#030712]/72 backdrop-blur-md">
@@ -14,36 +20,72 @@ const Backdrop: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 
 export const StoryModal: React.FC<{
   level: Level;
-  onStart: () => void;
-}> = ({ level, onStart }) => (
-  <Backdrop>
-    <div className="flex items-center gap-3">
-      <div className="rounded-full bg-[#f6d98d]/12 p-1 shadow-[0_0_24px_rgba(214,168,79,0.25)] ring-2 ring-[#d6a84f]/35">
-        <Avatar hue={28} size={56} mood="happy" />
+  onStart: (mode: PlayMode) => void;
+}> = ({ level, onStart }) => {
+  const [mode, setMode] = React.useState<PlayMode>('relaxed');
+  const goal = formatClock(timeGoalSeconds(level));
+  const limit = formatClock(timeLimitSeconds(level));
+
+  return (
+    <Backdrop>
+      <div className="flex items-center gap-3">
+        <div className="rounded-full bg-[#f6d98d]/12 p-1 shadow-[0_0_24px_rgba(214,168,79,0.25)] ring-2 ring-[#d6a84f]/35">
+          <Avatar hue={28} size={56} mood="happy" />
+        </div>
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#d6a84f]">
+            Level {level.id}
+          </p>
+          <h2 className="font-display text-2xl font-extrabold text-[#fff5d8]">
+            {level.title}
+          </h2>
+        </div>
       </div>
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#d6a84f]">
-          Level {level.id}
+      <div className="mt-4 rounded-3xl border border-white/10 bg-[#0d1930]/72 p-4 text-[#eadfcb] shadow-inner">
+        <p className="text-[15px] leading-relaxed">{level.intro}</p>
+        <p className="mt-3 text-xs font-semibold text-[#d6a84f]">
+          &mdash; {level.hostName}
         </p>
-        <h2 className="font-display text-2xl font-extrabold text-[#fff5d8]">
-          {level.title}
-        </h2>
       </div>
-    </div>
-    <div className="mt-4 rounded-3xl border border-white/10 bg-[#0d1930]/72 p-4 text-[#eadfcb] shadow-inner">
-      <p className="text-[15px] leading-relaxed">{level.intro}</p>
-      <p className="mt-3 text-xs font-semibold text-[#d6a84f]">
-        &mdash; {level.hostName}
-      </p>
-    </div>
-    <button
-      onClick={onStart}
-      className="mt-5 w-full rounded-2xl bg-gradient-to-r from-[#d6a84f] via-[#f0c76a] to-[#a86a78] py-3 text-lg font-extrabold text-[#130f20] shadow-[0_12px_28px_rgba(214,168,79,0.25)] transition hover:-translate-y-0.5 active:scale-95"
-    >
-      Let&apos;s seat them!
-    </button>
-  </Backdrop>
-);
+      <div className="mt-4 grid grid-cols-2 gap-2 rounded-3xl border border-white/10 bg-white/8 p-2 shadow-inner">
+        <button
+          type="button"
+          onClick={() => setMode('relaxed')}
+          className={`rounded-2xl px-3 py-3 text-left text-sm font-black transition active:scale-95 ${
+            mode === 'relaxed'
+              ? 'bg-[#d6a84f] text-[#15101f]'
+              : 'bg-[#050816]/48 text-[#d9cda9]'
+          }`}
+        >
+          Relaxed
+          <span className="block text-[10px] font-bold opacity-80">
+            {goal} star goal
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode('timed')}
+          className={`rounded-2xl px-3 py-3 text-left text-sm font-black transition active:scale-95 ${
+            mode === 'timed'
+              ? 'bg-[#d6a84f] text-[#15101f]'
+              : 'bg-[#050816]/48 text-[#d9cda9]'
+          }`}
+        >
+          Timed
+          <span className="block text-[10px] font-bold opacity-80">
+            {limit} countdown
+          </span>
+        </button>
+      </div>
+      <button
+        onClick={() => onStart(mode)}
+        className="mt-5 w-full rounded-2xl bg-gradient-to-r from-[#d6a84f] via-[#f0c76a] to-[#a86a78] py-3 text-lg font-extrabold text-[#130f20] shadow-[0_12px_28px_rgba(214,168,79,0.25)] transition hover:-translate-y-0.5 active:scale-95"
+      >
+        Let&apos;s seat them!
+      </button>
+    </Backdrop>
+  );
+};
 
 export const WinModal: React.FC<{
   level: Level;

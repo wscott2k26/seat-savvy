@@ -23,10 +23,18 @@ const Bulb = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="#ffe08a" stroke="#c9941f" strokeWidth="1.4"><path d="M9 18h6M10 21h4M12 2a7 7 0 0 0-4 12c.6.6 1 1.4 1 2h6c0-.6.4-1.4 1-2A7 7 0 0 0 12 2z" /></svg>
 );
 
-const TopBar: React.FC<{ onHint: () => void; onReset: () => void; onSettings: () => void }> = ({
+const TopBar: React.FC<{
+  onHint: () => void;
+  onReset: () => void;
+  onSettings: () => void;
+  timerLabel?: string;
+  timerUrgent?: boolean;
+}> = ({
   onHint,
   onReset,
   onSettings,
+  timerLabel,
+  timerUrgent = false,
 }) => {
   const { level, levelStats, progress, openMenu, playSound } = useGame();
   return (
@@ -42,6 +50,11 @@ const TopBar: React.FC<{ onHint: () => void; onReset: () => void; onSettings: ()
             </p>
             <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-[#d6a84f]">
               {levelStats.mistakes} misses · {levelStats.hintsUsed} hints
+              {timerLabel && (
+                <span className={timerUrgent ? 'text-[#f3a8b6]' : ''}>
+                  {' '}· {timerLabel}
+                </span>
+              )}
             </p>
           </div>
         )}

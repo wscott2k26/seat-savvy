@@ -40,15 +40,58 @@ export interface Seat {
   y: number; // 0..100 relative position in the scene
 }
 
-export type EnvironmentId =
-  | 'bus'
-  | 'classroom'
-  | 'coffee'
-  | 'restaurant'
-  | 'theater'
-  | 'airport'
-  | 'wedding'
-  | 'cruise';
+export const ENVIRONMENT_IDS = [
+  'bus',
+  'classroom',
+  'coffee',
+  'restaurant',
+  'theater',
+  'airport',
+  'wedding',
+  'cruise',
+  'library',
+  'hospital',
+  'train',
+  'subway',
+  'ferry',
+  'campsite',
+  'museum',
+  'aquarium',
+  'zoo',
+  'planetarium',
+  'shopping-mall',
+  'arcade',
+  'bowling-alley',
+  'spa',
+  'fitness-studio',
+  'office',
+  'coworking-space',
+  'courthouse',
+  'bank',
+  'hotel-lobby',
+  'ski-lodge',
+  'beach-resort',
+  'city-park',
+  'botanical-garden',
+  'rooftop-party',
+  'concert-hall',
+  'street-festival',
+  'farmers-market',
+  'food-truck-park',
+  'diner',
+  'bakery',
+  'pizzeria',
+  'sushi-bar',
+  'board-game-cafe',
+  'bookstore',
+  'art-studio',
+  'science-lab',
+  'observatory',
+  'spaceship',
+  'castle-banquet',
+] as const;
+
+export type EnvironmentId = (typeof ENVIRONMENT_IDS)[number];
 
 export interface Level {
   id: number;

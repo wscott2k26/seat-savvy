@@ -1,6 +1,7 @@
 import React from 'react';
 import type { EnvironmentId } from './types';
 import type { EnvironmentPaletteId } from './customization';
+import { sceneForLocation, type SceneFamily } from './locations';
 
 const Particles: React.FC<{ kind: 'dust' | 'leaf' | 'rain'; n?: number }> = ({
   kind,
@@ -30,7 +31,7 @@ const Sky: React.FC<{ from: string; to: string }> = ({ from, to }) => (
 
 type EnvironmentArtStyle = 'storybook' | 'real';
 
-const REAL_BACKGROUND_BASE: Record<EnvironmentId, string> = {
+const REAL_BACKGROUND_BASE: Record<SceneFamily, string> = {
   bus: '/images/environments/bus',
   classroom: '/images/environments/classroom',
   coffee: '/images/environments/coffee-shop',
@@ -60,14 +61,14 @@ const PALETTE_OVERLAYS: Record<EnvironmentPaletteId, string> = {
 };
 
 const RealEnvironmentBackground: React.FC<{
-  env: EnvironmentId;
+  scene: SceneFamily;
   enabled: boolean;
-}> = ({ env, enabled }) => {
+}> = ({ scene, enabled }) => {
   const [attempt, setAttempt] = React.useState(0);
 
   React.useEffect(() => {
     setAttempt(0);
-  }, [env, enabled]);
+  }, [scene, enabled]);
 
   if (!enabled || attempt >= IMAGE_EXTENSIONS.length) return null;
 
@@ -75,7 +76,7 @@ const RealEnvironmentBackground: React.FC<{
     <>
       <img
         aria-hidden="true"
-        src={`${REAL_BACKGROUND_BASE[env]}.${IMAGE_EXTENSIONS[attempt]}`}
+        src={`${REAL_BACKGROUND_BASE[scene]}.${IMAGE_EXTENSIONS[attempt]}`}
         onError={() => setAttempt((current) => current + 1)}
         className="absolute inset-0 h-full w-full object-cover opacity-90 saturate-[1.05]"
       />
@@ -102,14 +103,15 @@ const EnvScene: React.FC<{
   artStyle?: EnvironmentArtStyle;
   environmentPalette?: EnvironmentPaletteId;
 }> = ({ env, artStyle = 'storybook', environmentPalette = 'default' }) => {
+  const scene = sceneForLocation(env);
   const realBackground = (
-    <RealEnvironmentBackground env={env} enabled={artStyle === 'real'} />
+    <RealEnvironmentBackground scene={scene} enabled={artStyle === 'real'} />
   );
   const paletteOverlay = (
     <EnvironmentPaletteOverlay palette={environmentPalette} />
   );
 
-  if (env === 'bus') {
+  if (scene === 'bus') {
     return (
       <div className="absolute inset-0">
         <Sky from="#0a1224" to="#1f3850" />
@@ -155,7 +157,7 @@ const EnvScene: React.FC<{
       </div>
     );
   }
-  if (env === 'classroom') {
+  if (scene === 'classroom') {
     return (
       <div className="absolute inset-0">
         <Sky from="#111b31" to="#3b2c45" />
@@ -196,7 +198,7 @@ const EnvScene: React.FC<{
       </div>
     );
   }
-  if (env === 'coffee') {
+  if (scene === 'coffee') {
     return (
       <div className="absolute inset-0">
         <Sky from="#1b1221" to="#53311f" />
@@ -249,7 +251,7 @@ const EnvScene: React.FC<{
       </div>
     );
   }
-  if (env === 'restaurant') {
+  if (scene === 'restaurant') {
     return (
       <div className="absolute inset-0">
         <Sky from="#120d1d" to="#54263e" />
@@ -283,7 +285,7 @@ const EnvScene: React.FC<{
       </div>
     );
   }
-  if (env === 'airport') {
+  if (scene === 'airport') {
     return (
       <div className="absolute inset-0">
         <Sky from="#0b1427" to="#24435f" />
@@ -324,7 +326,7 @@ const EnvScene: React.FC<{
       </div>
     );
   }
-  if (env === 'wedding') {
+  if (scene === 'wedding') {
     return (
       <div className="absolute inset-0">
         <Sky from="#130c1e" to="#51233c" />
@@ -347,7 +349,7 @@ const EnvScene: React.FC<{
       </div>
     );
   }
-  if (env === 'cruise') {
+  if (scene === 'cruise') {
     return (
       <div className="absolute inset-0">
         <Sky from="#241a3a" to="#0f5272" />

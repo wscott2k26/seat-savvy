@@ -1,4 +1,5 @@
 import type { Level, Character, Constraint, SeatAttr } from './types';
+import { EXPANSION_LEVELS } from './generatedLevels';
 import {
   busLayout,
   classroomLayout,
@@ -25,7 +26,7 @@ function ch(
   return { id, name, hue, trait, constraints };
 }
 
-export const LEVELS: Level[] = [
+const BASE_LEVELS: Level[] = [
   {
     id: 1, env: 'bus', title: 'Field Trip Frenzy', hostName: 'Mr. Pebble',
     intro: 'First day field trip! Six kids, one wobbly bus. Everybody wants the perfect seat... can you make peace before we hit the road?',
@@ -573,6 +574,8 @@ export const LEVELS: Level[] = [
     ],
   },
 ];
+
+export const LEVELS: Level[] = [...BASE_LEVELS, ...EXPANSION_LEVELS];
 
 export function levelById(id: number): Level | undefined {
   return LEVELS.find((l) => l.id === id);
