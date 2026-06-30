@@ -105,10 +105,11 @@ const PlayScreen: React.FC = () => {
 
   return (
     <div
+      data-play-screen
       className="safe-screen relative flex h-full w-full flex-col"
       style={{ background: themeBackground }}
     >
-      <div className="relative flex-1 overflow-hidden">
+      <div data-world-panel className="relative flex-1 overflow-hidden">
         <WorldStage />
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(5,8,22,0.34),transparent_34%,rgba(5,8,22,0.38)),radial-gradient(circle_at_center,transparent_42%,rgba(3,7,18,0.42)_100%)]" />
         <TopBar

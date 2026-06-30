@@ -84,20 +84,22 @@ const WorldStage: React.FC = () => {
         }
       />
       {objectsFor(level.env)}
-      {level.seats.map((seat) => {
-        const occId = charBySeat[seat.id];
-        const occ = occId ? charById[occId] : undefined;
-        return (
-          <Seat
-            key={seat.id}
-            seat={seat}
-            env={level.env}
-            occupant={occ}
-            violated={occ ? violations.has(occ.id) : false}
-            nameOf={nameOf}
-          />
-        );
-      })}
+      <div data-seat-field className="safe-seat-field">
+        {level.seats.map((seat) => {
+          const occId = charBySeat[seat.id];
+          const occ = occId ? charById[occId] : undefined;
+          return (
+            <Seat
+              key={seat.id}
+              seat={seat}
+              env={level.env}
+              occupant={occ}
+              violated={occ ? violations.has(occ.id) : false}
+              nameOf={nameOf}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 };

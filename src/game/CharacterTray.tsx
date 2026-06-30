@@ -38,7 +38,7 @@ const CharacterTray: React.FC = () => {
         {unplaced.map((c) => (
           <div
             key={c.id}
-            className={`group relative flex w-[118px] shrink-0 flex-col items-center rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,245,216,0.12),rgba(214,168,79,0.08))] p-2.5 shadow-[0_12px_26px_rgba(0,0,0,0.28)] ring-1 ring-[#d6a84f]/14 transition ${
+            className={`character-card group relative flex w-[118px] shrink-0 flex-col items-center rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,245,216,0.12),rgba(214,168,79,0.08))] p-2.5 shadow-[0_12px_26px_rgba(0,0,0,0.28)] ring-1 ring-[#d6a84f]/14 transition ${
               draggingId === c.id ? 'opacity-30' : 'hover:-translate-y-0.5'
             }`}
           >
@@ -48,7 +48,7 @@ const CharacterTray: React.FC = () => {
               className="touch-none"
               aria-label={`Drag ${c.name}`}
             >
-              <div className="rounded-full bg-[#fff5d8] p-0.5 shadow-[0_0_16px_rgba(214,168,79,0.18)] ring-1 ring-[#d6a84f]/35">
+              <div className="character-avatar rounded-full bg-[#fff5d8] p-0.5 shadow-[0_0_16px_rgba(214,168,79,0.18)] ring-1 ring-[#d6a84f]/35">
                 <Avatar
                   hue={c.hue}
                   size={48}
@@ -63,7 +63,7 @@ const CharacterTray: React.FC = () => {
             <p className="max-w-full truncate text-[10px] font-semibold text-[#a9a0b5]">
               {c.trait}
             </p>
-            <div className="mt-1 grid w-full gap-1 text-[#d9cda9]">
+            <div className="character-card-clues mt-1 grid w-full gap-1 text-[#d9cda9]">
               {c.constraints.slice(0, 2).map((cl, i) => (
                 <span
                   key={i}

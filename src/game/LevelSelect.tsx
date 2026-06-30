@@ -170,6 +170,7 @@ const LevelSelect: React.FC<{
           <MenuTile label="Customize" sublabel="Avatar" onClick={onCustomize} />
           <MenuTile label="Missions" sublabel="Daily" onClick={onMissions} />
           <MenuTile label="Achievements" sublabel="Shelf" onClick={onAchievements} />
+          {!progress.premium && <MenuTile featured label="Premium" sublabel="Full story" onClick={onPremium} />}
           <MenuTile label="Settings" sublabel="Audio" onClick={onSettings} />
         </div>
       </div>

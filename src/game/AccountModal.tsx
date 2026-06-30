@@ -37,7 +37,7 @@ export const AccountModal: React.FC<{ onClose: () => void }> = ({ onClose }) => 
             Keep your progress
           </h2>
           <p className="mt-1 text-sm font-semibold text-[#d9cda9]">
-            Choose guest play or connect a profile. Your current progress stays intact.
+            Continue as a guest for this build. Your current progress stays intact on this device.
           </p>
         </div>
         <button

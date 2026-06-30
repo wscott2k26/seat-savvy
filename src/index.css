@@ -93,13 +93,30 @@
   }
 }
 
-@supports (-webkit-touch-callout: none) {
-  :root {
-    --safe-area-top: max(env(safe-area-inset-top, 0px), 52px);
-    --safe-area-right: env(safe-area-inset-right, 0px);
-    --safe-area-bottom: max(env(safe-area-inset-bottom, 0px), 10px);
-    --safe-area-left: env(safe-area-inset-left, 0px);
+@media (max-width: 767px) and (pointer: coarse) {
+  @supports (-webkit-touch-callout: none) {
+    :root {
+      --safe-area-top: max(env(safe-area-inset-top, 0px), clamp(48px, 7dvh, 76px));
+      --safe-area-right: env(safe-area-inset-right, 0px);
+      --safe-area-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
+      --safe-area-left: env(safe-area-inset-left, 0px);
+    }
   }
+}
+
+.capacitor-ios.statusbar-contained {
+  --safe-area-top: max(env(safe-area-inset-top, 0px), clamp(52px, 6dvh, 78px));
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: max(env(safe-area-inset-bottom, 0px), 14px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+}
+
+.capacitor-ios.statusbar-overlay-guard,
+.capacitor-ios:not(.statusbar-contained) {
+  --safe-area-top: max(env(safe-area-inset-top, 0px), clamp(56px, 7dvh, 82px));
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
 }
 
 @layer base {
@@ -132,10 +149,7 @@
 
 .safe-app-shell {
   min-height: 100dvh;
-  padding-top: var(--safe-area-top);
-  padding-right: var(--safe-area-right);
-  padding-bottom: var(--safe-area-bottom);
-  padding-left: var(--safe-area-left);
+  padding: 0;
 }
 
 .safe-screen {
@@ -173,6 +187,12 @@
   right: calc(var(--safe-area-right) + 1rem);
 }
 
+.safe-notice-bottom {
+  bottom: calc(var(--safe-area-bottom) + 1rem);
+  left: calc(var(--safe-area-left) + 1rem);
+  right: calc(var(--safe-area-right) + 1rem);
+}
+
 .safe-modal-padding {
   padding-top: calc(var(--safe-area-top) + 1rem);
   padding-right: calc(var(--safe-area-right) + 1rem);
@@ -190,9 +210,120 @@
   padding-bottom: calc(var(--safe-area-bottom) + 1rem);
 }
 
+.safe-seat-field {
+  position: absolute;
+  inset: calc(var(--safe-area-top) + 7.25rem) 0 1.75rem 0;
+}
+
 .safe-hit {
   min-width: 44px;
   min-height: 44px;
+}
+
+[data-play-screen] {
+  --seat-size: 4rem;
+}
+
+.seat-body {
+  width: var(--seat-size);
+  height: var(--seat-size);
+}
+
+.seat-back {
+  top: calc(var(--seat-size) * -0.1875);
+  width: calc(var(--seat-size) * 0.875);
+  height: calc(var(--seat-size) * 0.375);
+}
+
+.seat-occupant {
+  top: calc(var(--seat-size) * -0.4375);
+}
+
+.seat-occupant-avatar svg {
+  width: calc(var(--seat-size) * 0.8125);
+  height: calc(var(--seat-size) * 0.8125);
+}
+
+.seat-status-badge {
+  top: calc(var(--seat-size) * -0.75);
+  right: calc(var(--seat-size) * -0.1875);
+}
+
+.seat-name-label {
+  top: calc(var(--seat-size) + 0.35rem);
+  max-width: calc(var(--seat-size) * 1.65);
+}
+
+@media (max-height: 740px), (max-width: 380px) {
+  [data-play-screen] {
+    --seat-size: 2.75rem;
+  }
+
+  .safe-hud-top {
+    top: calc(var(--safe-area-top) + 4rem);
+  }
+
+  .safe-seat-field {
+    inset: calc(var(--safe-area-top) + 6.2rem) 0 0.65rem 0;
+  }
+
+  [data-tray] {
+    border-top-left-radius: 22px;
+    border-top-right-radius: 22px;
+    padding-top: 0.5rem;
+    padding-right: calc(var(--safe-area-right) + 0.5rem);
+    padding-left: calc(var(--safe-area-left) + 0.5rem);
+  }
+
+  [data-tray] .mb-2 {
+    margin-bottom: 0.35rem;
+  }
+
+  .character-card {
+    width: 100px !important;
+    border-radius: 18px !important;
+    padding: 0.45rem !important;
+  }
+
+  .character-avatar svg {
+    width: 40px;
+    height: 40px;
+  }
+
+  .character-card p {
+    line-height: 1.1;
+  }
+
+  .character-card-clues {
+    gap: 0.25rem;
+  }
+
+  .character-card-clues span {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    padding: 0.2rem 0.35rem;
+    font-size: 8px;
+    line-height: 1.05;
+  }
+
+  .character-card-clues span span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .seat-name-label {
+    font-size: 9px;
+    padding: 0.1rem 0.4rem;
+  }
+
+  .seat-status-badge {
+    padding: 0.05rem 0.35rem;
+    font-size: 9px;
+  }
 }
 
 .markdown-editor {

@@ -528,6 +528,12 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => clearTimeout(t);
   }, [feedback]);
 
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(null), 3200);
+    return () => clearTimeout(t);
+  }, [notice]);
+
   const playSound = useCallback(
     (sound: GameSound) => {
       getAudioEngine().sync(progress.settings, activeAudioEnvironment);

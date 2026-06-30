@@ -423,13 +423,13 @@ export const DailyRewardModal: React.FC<{ onClose: () => void }> = ({
 };
 
 export const LifeNoticeModal: React.FC = () => {
-  const { dismissNotice, notice } = useGame();
+  const { notice } = useGame();
   if (!notice) return null;
   return (
-    <button
-      onClick={dismissNotice}
-      className="safe-notice-top fixed z-[140] mx-auto max-w-sm rounded-[26px] border border-[#d6a84f]/34 bg-[linear-gradient(145deg,rgba(6,13,28,0.97),rgba(35,24,48,0.97))] p-4 text-left text-[#f8edd2] shadow-[0_22px_52px_rgba(0,0,0,0.5),0_0_26px_rgba(214,168,79,0.12)] ring-1 ring-white/10 backdrop-blur-md active:scale-[0.99]"
-      type="button"
+    <div
+      aria-live="polite"
+      className="safe-notice-bottom pointer-events-none fixed z-[140] mx-auto max-w-sm rounded-[26px] border border-[#d6a84f]/34 bg-[linear-gradient(145deg,rgba(6,13,28,0.97),rgba(35,24,48,0.97))] p-4 text-left text-[#f8edd2] shadow-[0_22px_52px_rgba(0,0,0,0.5),0_0_26px_rgba(214,168,79,0.12)] ring-1 ring-white/10 backdrop-blur-md"
+      role="status"
     >
       <div className="flex items-start gap-3">
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#d6a84f]/18 text-[#f6d98d] shadow-[0_0_18px_rgba(214,168,79,0.2)] ring-1 ring-[#d6a84f]/26">
@@ -440,7 +440,7 @@ export const LifeNoticeModal: React.FC = () => {
           <p className="mt-1 text-sm font-semibold text-[#d9cda9]">{notice.text}</p>
         </span>
       </div>
-    </button>
+    </div>
   );
 };
 

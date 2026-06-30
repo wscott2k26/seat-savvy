@@ -48,7 +48,7 @@ const GameShell: React.FC = () => {
 
   return (
     <DragLayer>
-      <div className="relative min-h-[100dvh] w-full select-none md:min-h-[calc(100dvh-2rem)]">
+      <div className="relative h-[100dvh] w-full select-none md:h-[calc(100dvh-2rem)]">
         {screen === 'menu' ? (
           <LevelSelect
             onAccount={() => setShowAccount(true)}
@@ -120,8 +120,8 @@ const AppLayout: React.FC = () => {
   return (
     <div className="safe-app-shell w-full bg-[linear-gradient(135deg,#050816_0%,#151126_34%,#2a1738_65%,#0b2138_100%)]">
       {/* ambient desktop frame */}
-      <div className="mx-auto flex min-h-[100dvh] max-w-md flex-col overflow-hidden bg-[#070b1a] shadow-[0_28px_90px_rgba(0,0,0,0.62),0_0_42px_rgba(214,168,79,0.12)] ring-1 ring-[#d6a84f]/24 md:my-4 md:min-h-[calc(100dvh-2rem)] md:rounded-[36px]">
-        <div className="relative flex min-h-[100dvh] w-full flex-col md:min-h-[calc(100dvh-2rem)]">
+      <div className="mx-auto flex h-[100dvh] w-full max-w-md flex-col overflow-hidden bg-[#070b1a] shadow-[0_28px_90px_rgba(0,0,0,0.62),0_0_42px_rgba(214,168,79,0.12)] ring-1 ring-[#d6a84f]/24 md:my-4 md:h-[calc(100dvh-2rem)] md:rounded-[36px]">
+        <div className="relative flex h-full w-full flex-col">
           <GameProvider>
             <GameShell />
           </GameProvider>

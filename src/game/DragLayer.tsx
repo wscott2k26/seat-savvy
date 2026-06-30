@@ -18,6 +18,26 @@ interface DragCtx {
   draggingId: string | null;
 }
 
+function nearestSeatFromPoint(x: number, y: number): HTMLElement | null {
+  let nearest: HTMLElement | null = null;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+
+  document.querySelectorAll<HTMLElement>('[data-seat]').forEach((seat) => {
+    const rect = seat.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const distance = Math.hypot(centerX - x, centerY - y);
+    const touchRadius = Math.max(rect.width, rect.height, 56) * 0.82;
+
+    if (distance <= touchRadius && distance < nearestDistance) {
+      nearest = seat;
+      nearestDistance = distance;
+    }
+  });
+
+  return nearest;
+}
+
 const Ctx = createContext<DragCtx | null>(null);
 export const useDrag = () => {
   const c = useContext(Ctx);
@@ -40,9 +60,7 @@ export const DragLayer: React.FC<{ children: React.ReactNode }> = ({
       el.style.top = `${y}px`;
     }
     // highlight seat under pointer
-    const target = document
-      .elementFromPoint(x, y)
-      ?.closest('[data-seat]') as HTMLElement | null;
+    const target = nearestSeatFromPoint(x, y);
     document
       .querySelectorAll('[data-seat].seat-hot')
       .forEach((n) => n.classList.remove('seat-hot'));
@@ -57,7 +75,7 @@ export const DragLayer: React.FC<{ children: React.ReactNode }> = ({
         .forEach((n) => n.classList.remove('seat-hot'));
       if (p) {
         const el = document.elementFromPoint(x, y) as HTMLElement | null;
-        const seatEl = el?.closest('[data-seat]') as HTMLElement | null;
+        const seatEl = nearestSeatFromPoint(x, y);
         const trayEl = el?.closest('[data-tray]');
         if (seatEl) {
           const seatId = seatEl.getAttribute('data-seat')!;

@@ -42,7 +42,7 @@ const Seat: React.FC<Props> = ({ seat, env, occupant, violated, nameOf }) => {
           className="seat-body relative flex h-16 w-16 items-end justify-center rounded-2xl shadow-lg ring-2 ring-black/10 transition-transform"
           style={{ background: `linear-gradient(160deg, ${tint}, ${tint}cc)` }}
         >
-          <div className="absolute -top-3 left-1/2 h-6 w-14 -translate-x-1/2 rounded-t-xl" style={{ background: tint }} />
+          <div className="seat-back absolute -top-3 left-1/2 h-6 w-14 -translate-x-1/2 rounded-t-xl" style={{ background: tint }} />
           {!occupant && (
             <div className="absolute inset-0 flex flex-wrap items-center justify-center gap-0.5 p-1 text-white/85">
               {seat.attrs.slice(0, 4).map((a) => (
@@ -54,10 +54,10 @@ const Seat: React.FC<Props> = ({ seat, env, occupant, violated, nameOf }) => {
             <button
               type="button"
               onPointerDown={(e) => startDrag({ charId: occupant.id, hue: occupant.hue }, e)}
-              className="absolute -top-7 left-1/2 -translate-x-1/2 touch-none"
+              className="seat-occupant absolute -top-7 left-1/2 -translate-x-1/2 touch-none"
               aria-label={`Move ${occupant.name}`}
             >
-              <div className="ts-sit rounded-full bg-white/80 p-0.5 shadow-md ring-1 ring-white">
+              <div className="seat-occupant-avatar ts-sit rounded-full bg-white/80 p-0.5 shadow-md ring-1 ring-white">
                 <Avatar
                   hue={occupant.hue}
                   size={52}
@@ -70,7 +70,7 @@ const Seat: React.FC<Props> = ({ seat, env, occupant, violated, nameOf }) => {
         </div>
         {occupant && (
           <div
-            className={`pointer-events-none absolute -right-3 -top-12 z-20 flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold shadow-md ${
+            className={`seat-status-badge pointer-events-none absolute -right-3 -top-12 z-20 flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold shadow-md ${
               violated ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'
             }`}
           >
@@ -78,7 +78,7 @@ const Seat: React.FC<Props> = ({ seat, env, occupant, violated, nameOf }) => {
           </div>
         )}
         {occupant && (
-          <div className="pointer-events-none absolute left-1/2 top-[4.35rem] z-20 max-w-[6.5rem] -translate-x-1/2 rounded-full border border-[#f2c66d]/35 bg-[#071022]/88 px-2.5 py-0.5 text-center text-[10px] font-extrabold leading-tight text-[#fff5d8] shadow-[0_8px_18px_rgba(0,0,0,0.32),0_0_14px_rgba(214,168,79,0.16)] backdrop-blur">
+          <div className="seat-name-label pointer-events-none absolute left-1/2 top-[4.35rem] z-20 max-w-[6.5rem] -translate-x-1/2 rounded-full border border-[#f2c66d]/35 bg-[#071022]/88 px-2.5 py-0.5 text-center text-[10px] font-extrabold leading-tight text-[#fff5d8] shadow-[0_8px_18px_rgba(0,0,0,0.32),0_0_14px_rgba(214,168,79,0.16)] backdrop-blur">
             <span className="block truncate">{occupantName}</span>
           </div>
         )}
