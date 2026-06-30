@@ -129,25 +129,31 @@ class BrowserAudioEngine {
 
     const basePath = `/audio/sfx/${SFX_BY_SOUND[sound]}`;
     if (this.missingAssets.has(basePath)) {
-      if (sound === 'win') this.playSuccessFallback(preferences.sfxVolume);
+      this.playFallbackSound(sound, preferences.sfxVolume);
       return;
     }
+
+    let fallbackPlayed = false;
+    const playFallbackOnce = () => {
+      if (fallbackPlayed) return;
+      fallbackPlayed = true;
+      this.playFallbackSound(sound, preferences.sfxVolume);
+    };
 
     this.playOneShot(
       basePath,
       preferences.sfxVolume,
       () => {
         this.missingAssets.add(basePath);
-        if (sound === 'win') this.playSuccessFallback(preferences.sfxVolume);
+        playFallbackOnce();
       },
       undefined,
-      sound === 'win'
-        ? () => this.playSuccessFallback(preferences.sfxVolume)
-        : undefined,
+      playFallbackOnce,
     );
   }
 
-  private playSuccessFallback(volume: number) {
+  private playFallbackSound(sound: GameSound, volume: number) {
+    if (!['correct', 'wrong', 'win', 'achievement'].includes(sound)) return;
     if (typeof window === 'undefined') return;
     const AudioContextCtor =
       window.AudioContext ||
@@ -158,38 +164,85 @@ class BrowserAudioEngine {
     try {
       const context = this.audioContext ?? new AudioContextCtor();
       this.audioContext = context;
-      const startChime = () => {
-        const now = context.currentTime;
-        const master = context.createGain();
-        master.gain.setValueAtTime(0.0001, now);
-        master.gain.exponentialRampToValueAtTime(Math.max(0.0001, clamp(volume) * 0.22), now + 0.025);
-        master.gain.exponentialRampToValueAtTime(0.0001, now + 0.62);
-        master.connect(context.destination);
-
-        [523.25, 659.25, 783.99].forEach((frequency, index) => {
-          const osc = context.createOscillator();
-          const gain = context.createGain();
-          const start = now + index * 0.105;
-          osc.type = index === 2 ? 'triangle' : 'sine';
-          osc.frequency.setValueAtTime(frequency, start);
-          gain.gain.setValueAtTime(0.0001, start);
-          gain.gain.exponentialRampToValueAtTime(0.55, start + 0.025);
-          gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.28);
-          osc.connect(gain);
-          gain.connect(master);
-          osc.start(start);
-          osc.stop(start + 0.32);
-        });
-      };
+      const startSound = () => this.startFallbackSound(context, sound, volume);
 
       if (context.state === 'suspended') {
-        void context.resume().then(startChime).catch(() => undefined);
+        void context.resume().then(startSound).catch(() => undefined);
       } else {
-        startChime();
+        startSound();
       }
     } catch (error) {
-      devAudioLog('Web Audio fallback failed', 'success-chime', error);
+      devAudioLog('Web Audio fallback failed', sound, error);
     }
+  }
+
+  private startFallbackSound(
+    context: AudioContext,
+    sound: GameSound,
+    volume: number,
+  ) {
+    const now = context.currentTime;
+    const master = context.createGain();
+    master.gain.setValueAtTime(0.0001, now);
+    master.gain.exponentialRampToValueAtTime(
+      Math.max(0.0001, clamp(volume) * (sound === 'wrong' ? 0.28 : 0.24)),
+      now + 0.02,
+    );
+    master.gain.exponentialRampToValueAtTime(
+      0.0001,
+      now + (sound === 'wrong' ? 0.42 : sound === 'correct' ? 0.46 : 0.78),
+    );
+    master.connect(context.destination);
+
+    if (sound === 'wrong') {
+      this.tone(context, master, 150, now, 0.18, 'sawtooth', 0.45, 95);
+      this.tone(context, master, 105, now + 0.16, 0.2, 'sawtooth', 0.45, 70);
+      return;
+    }
+
+    if (sound === 'correct') {
+      this.tone(context, master, 880, now, 0.16, 'triangle', 0.44);
+      this.tone(context, master, 1174.66, now + 0.13, 0.22, 'triangle', 0.38);
+      return;
+    }
+
+    [523.25, 659.25, 783.99, 1046.5].forEach((frequency, index) => {
+      this.tone(
+        context,
+        master,
+        frequency,
+        now + index * 0.095,
+        0.28,
+        index === 3 ? 'triangle' : 'sine',
+        index === 3 ? 0.34 : 0.48,
+      );
+    });
+  }
+
+  private tone(
+    context: AudioContext,
+    destination: AudioNode,
+    frequency: number,
+    start: number,
+    duration: number,
+    type: OscillatorType,
+    gainValue: number,
+    endFrequency?: number,
+  ) {
+    const osc = context.createOscillator();
+    const gain = context.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(frequency, start);
+    if (endFrequency) {
+      osc.frequency.exponentialRampToValueAtTime(endFrequency, start + duration);
+    }
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(gainValue, start + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    osc.connect(gain);
+    gain.connect(destination);
+    osc.start(start);
+    osc.stop(start + duration + 0.03);
   }
 
   private playOneShot(

@@ -62,14 +62,7 @@ const LevelSelect: React.FC<{
   const playerLevel = playerLevelForXp(progress.xp);
   const xpInto = xpIntoLevel(progress.xp);
   const stars = totalStars(progress.stars);
-  const accountLabel =
-    progress.account.provider === 'guest'
-      ? 'Guest Save'
-      : progress.account.provider === 'gmail'
-      ? 'Gmail Save'
-      : progress.account.provider === 'facebook'
-      ? 'Facebook Save'
-      : 'Email Save';
+  const accountLabel = 'Guest Save';
   const themeBackground =
     GAME_THEME_BACKGROUNDS[progress.customization.gameTheme] ??
     GAME_THEME_BACKGROUNDS['midnight-gold'];

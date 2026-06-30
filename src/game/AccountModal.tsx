@@ -24,14 +24,7 @@ export const AccountModal: React.FC<{ onClose: () => void }> = ({ onClose }) => 
     onClose();
   };
 
-  const providerLabel =
-    progress.account.provider === 'guest'
-      ? 'Guest'
-      : progress.account.provider === 'gmail'
-      ? 'Gmail'
-      : progress.account.provider === 'facebook'
-      ? 'Facebook'
-      : 'Email';
+  const providerLabel = 'Guest';
 
   return (
     <Backdrop>
@@ -101,9 +94,9 @@ export const AccountModal: React.FC<{ onClose: () => void }> = ({ onClose }) => 
           </span>
         </button>
         <div className="rounded-2xl border border-white/10 bg-white/8 px-4 py-3 text-left shadow-inner">
-          <p className="text-sm font-black text-[#fff5d8]">Cloud sign-in</p>
+          <p className="text-sm font-black text-[#fff5d8]">Cloud sign-in coming soon</p>
           <p className="mt-1 text-xs font-semibold text-[#a9a0b5]">
-            Email, Google, and Facebook login are coming soon and are not enabled in this build.
+            This build only supports local guest saves.
           </p>
         </div>
         {progress.account.provider !== 'guest' && (

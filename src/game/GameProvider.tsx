@@ -183,14 +183,6 @@ interface GameCtx {
   claimDailyReward: () => boolean;
   claimMission: (missionId: string) => boolean;
   openMysteryBox: () => boolean;
-  connectAccount: (
-    provider: Exclude<AccountProvider, 'guest'>,
-    details: {
-      displayName?: string;
-      email?: string;
-      shareWithFriends?: boolean;
-    },
-  ) => void;
   playAsGuest: (displayName?: string) => void;
   signOutAccount: () => void;
   markTutorialSeen: (dontShowAgain: boolean) => void;
@@ -252,20 +244,12 @@ function load(): Progress {
 
 function normalizeAccount(account?: Partial<PlayerAccount>): PlayerAccount {
   if (!account) return DEFAULT_ACCOUNT;
-  const provider: AccountProvider =
-    account.provider === 'email' ||
-    account.provider === 'gmail' ||
-    account.provider === 'facebook'
-      ? account.provider
-      : 'guest';
   return {
     ...DEFAULT_ACCOUNT,
-    ...account,
-    provider,
+    provider: 'guest',
     displayName: account.displayName?.trim() || DEFAULT_ACCOUNT.displayName,
     onboardingSeen: account.onboardingSeen ?? true,
-    shareWithFriends:
-      provider === 'facebook' ? !!account.shareWithFriends : !!account.shareWithFriends,
+    shareWithFriends: false,
   };
 }
 
@@ -1062,7 +1046,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
         life: nextLife,
       };
     });
-    playSound('coin');
+    playSound('win');
     setNotice({ title: 'Daily reward', text: `${reward.label} added to your cozy day.` });
     return true;
   }, [playSound, progress.life.daily.claimedDailyDate]);
@@ -1073,9 +1057,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
       if (!mission) return false;
       const amount = mission.progress(progress.life.daily);
       if (amount < mission.target || progress.life.daily.claimedMissions.includes(mission.id)) {
-        playSound('wrong');
-        return false;
-      }
+      playSound('wrong');
+      return false;
+    }
       setProgress((p) => ({
         ...p,
         coins: p.coins + mission.rewardCoins,
@@ -1088,11 +1072,12 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
           },
         },
       }));
-      playSound('coin');
-      setNotice({ title: 'Mission complete', text: `+${mission.rewardCoins} coins and +${mission.rewardXp} XP.` });
-      return true;
-    },
-    [playSound, progress.life.daily],
+    playSound('win');
+    triggerHaptic('achievement');
+    setNotice({ title: 'Mission complete', text: `+${mission.rewardCoins} coins and +${mission.rewardXp} XP.` });
+    return true;
+  },
+    [playSound, progress.life.daily, triggerHaptic],
   );
 
   const openMysteryBox = useCallback((): boolean => {
@@ -1123,43 +1108,6 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
     setNotice({ title: 'Mystery box opened', text: `${item.label} joined your collection. In-game coins only.` });
     return true;
   }, [playSound, progress.coins, progress.life.ownedItems]);
-
-  const connectAccount = useCallback(
-    (
-      provider: Exclude<AccountProvider, 'guest'>,
-      details: {
-        displayName?: string;
-        email?: string;
-        shareWithFriends?: boolean;
-      },
-    ) => {
-      const displayName =
-        details.displayName?.trim() ||
-        details.email?.split('@')[0]?.trim() ||
-        (provider === 'facebook'
-          ? 'Facebook Player'
-          : provider === 'gmail'
-          ? 'Gmail Player'
-          : 'Email Player');
-      setProgress((p) => ({
-        ...p,
-        account: {
-          provider,
-          displayName,
-          email: details.email?.trim() || undefined,
-          connectedAt: new Date().toISOString(),
-          onboardingSeen: true,
-          shareWithFriends: provider === 'facebook' && !!details.shareWithFriends,
-        },
-      }));
-      playSound('unlock');
-      setNotice({
-        title: 'Profile connected',
-        text: `${displayName}'s progress is saved on this device.`,
-      });
-    },
-    [playSound],
-  );
 
   const playAsGuest = useCallback(
     (displayName?: string) => {
@@ -1273,7 +1221,6 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
     claimDailyReward,
     claimMission,
     openMysteryBox,
-    connectAccount,
     playAsGuest,
     signOutAccount,
     markTutorialSeen,

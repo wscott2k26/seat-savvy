@@ -113,9 +113,7 @@ export const SettingsModal: React.FC<{
             className="w-full rounded-2xl border border-[#d6a84f]/24 bg-[#d6a84f]/12 px-4 py-3 text-left font-extrabold text-[#f6d98d] shadow-[0_10px_22px_rgba(0,0,0,0.22)] transition hover:bg-[#d6a84f]/18 active:scale-[0.99]"
             type="button"
           >
-            {progress.account.provider === 'guest'
-              ? 'Playing as Guest'
-              : `Connected with ${progress.account.provider}`}
+            Playing as Guest
             <span className="block text-xs font-medium text-[#d9cda9]">
               {progress.account.displayName} / progress saves on this device
             </span>
