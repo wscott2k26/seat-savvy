@@ -4,16 +4,18 @@ export type PlayMode = 'relaxed' | 'timed';
 
 export function timeGoalSeconds(level: Level): number {
   const count = level.characters.length;
-  if (count >= 14) return 240;
-  if (count >= 12) return 190;
+  if (count >= 24) return 480;
+  if (count >= 20) return 390;
+  if (count >= 15) return 280;
   if (count >= 10) return 145;
   return 80;
 }
 
 export function timeLimitSeconds(level: Level): number {
   const goal = timeGoalSeconds(level);
-  if (level.characters.length >= 14) return goal + 95;
-  if (level.characters.length >= 12) return goal + 70;
+  if (level.characters.length >= 24) return goal + 190;
+  if (level.characters.length >= 20) return goal + 150;
+  if (level.characters.length >= 15) return goal + 105;
   if (level.characters.length >= 10) return goal + 55;
   return goal + 35;
 }

@@ -1,7 +1,7 @@
 import React from 'react';
 import type { EnvironmentId } from './types';
 import type { EnvironmentPaletteId } from './customization';
-import { sceneForLocation, type SceneFamily } from './locations';
+import { locationFor, sceneForLocation, type SceneFamily } from './locations';
 
 const Particles: React.FC<{ kind: 'dust' | 'leaf' | 'rain'; n?: number }> = ({
   kind,
@@ -98,6 +98,124 @@ const EnvironmentPaletteOverlay: React.FC<{ palette: EnvironmentPaletteId }> = (
   );
 };
 
+const SCENE_ATMOSPHERE: Record<
+  SceneFamily,
+  {
+    trimOpacity: number;
+    beamOpacity: number;
+    texture: string;
+  }
+> = {
+  bus: {
+    trimOpacity: 0.58,
+    beamOpacity: 0.18,
+    texture:
+      'repeating-linear-gradient(90deg,rgba(255,255,255,0.05)_0_1px,transparent_1px_22px)',
+  },
+  classroom: {
+    trimOpacity: 0.5,
+    beamOpacity: 0.16,
+    texture:
+      'repeating-linear-gradient(0deg,rgba(255,255,255,0.045)_0_1px,transparent_1px_24px)',
+  },
+  coffee: {
+    trimOpacity: 0.64,
+    beamOpacity: 0.2,
+    texture:
+      'repeating-linear-gradient(120deg,rgba(255,224,178,0.045)_0_1px,transparent_1px_28px)',
+  },
+  restaurant: {
+    trimOpacity: 0.7,
+    beamOpacity: 0.24,
+    texture:
+      'repeating-linear-gradient(90deg,rgba(255,255,255,0.035)_0_1px,transparent_1px_30px)',
+  },
+  theater: {
+    trimOpacity: 0.72,
+    beamOpacity: 0.28,
+    texture:
+      'repeating-linear-gradient(115deg,rgba(255,255,255,0.045)_0_1px,transparent_1px_34px)',
+  },
+  airport: {
+    trimOpacity: 0.52,
+    beamOpacity: 0.14,
+    texture:
+      'repeating-linear-gradient(90deg,rgba(255,255,255,0.055)_0_1px,transparent_1px_36px)',
+  },
+  wedding: {
+    trimOpacity: 0.68,
+    beamOpacity: 0.22,
+    texture:
+      'repeating-linear-gradient(135deg,rgba(255,245,216,0.04)_0_1px,transparent_1px_26px)',
+  },
+  cruise: {
+    trimOpacity: 0.55,
+    beamOpacity: 0.16,
+    texture:
+      'repeating-linear-gradient(0deg,rgba(255,255,255,0.05)_0_1px,transparent_1px_30px)',
+  },
+};
+
+const alphaHex = (color: string, alpha: string) =>
+  /^#[0-9a-f]{6}$/i.test(color) ? `${color}${alpha}` : color;
+
+const SceneAtmosphere: React.FC<{ env: EnvironmentId; scene: SceneFamily }> = ({
+  env,
+  scene,
+}) => {
+  const location = locationFor(env);
+  const atmosphere = SCENE_ATMOSPHERE[scene];
+  const glowSoft = alphaHex(location.glow, '66');
+  const glowStrong = alphaHex(location.glow, 'cc');
+
+  return (
+    <>
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: `${atmosphere.texture},linear-gradient(145deg,transparent 0 44%,${alphaHex(location.to, '3d')} 100%),linear-gradient(28deg,${alphaHex(location.from, '30')} 0%,transparent 38%)`,
+          opacity: 0.92,
+        }}
+      />
+      <div
+        className="pointer-events-none absolute left-[8%] right-[8%] top-[7%] h-px rounded-full"
+        style={{
+          background: `linear-gradient(90deg,transparent,${glowStrong},transparent)`,
+          boxShadow: `0 0 22px ${glowSoft}`,
+          opacity: atmosphere.trimOpacity,
+        }}
+      />
+      <div
+        className="pointer-events-none absolute inset-x-[9%] bottom-[12%] h-px rounded-full"
+        style={{
+          background: `linear-gradient(90deg,transparent,${glowSoft},transparent)`,
+          opacity: atmosphere.trimOpacity,
+        }}
+      />
+      <div
+        className="pointer-events-none absolute left-[12%] top-[11%] h-[48%] w-[18%] -skew-x-12"
+        style={{
+          background: `linear-gradient(180deg,${glowSoft},transparent)`,
+          opacity: atmosphere.beamOpacity,
+        }}
+      />
+      <div
+        className="pointer-events-none absolute right-[14%] top-[13%] h-[44%] w-[16%] skew-x-12"
+        style={{
+          background: `linear-gradient(180deg,${alphaHex(location.glow, '52')},transparent)`,
+          opacity: atmosphere.beamOpacity,
+        }}
+      />
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[23%]"
+        style={{
+          background: `linear-gradient(180deg,transparent,${alphaHex(location.from, '36')})`,
+        }}
+      />
+    </>
+  );
+};
+
 const EnvScene: React.FC<{
   env: EnvironmentId;
   artStyle?: EnvironmentArtStyle;
@@ -110,6 +228,7 @@ const EnvScene: React.FC<{
   const paletteOverlay = (
     <EnvironmentPaletteOverlay palette={environmentPalette} />
   );
+  const atmosphere = <SceneAtmosphere env={env} scene={scene} />;
 
   if (scene === 'bus') {
     return (
@@ -117,6 +236,7 @@ const EnvScene: React.FC<{
         <Sky from="#0a1224" to="#1f3850" />
         {realBackground}
         {paletteOverlay}
+        {atmosphere}
         <div className="absolute inset-x-3 bottom-0 top-[8%] rounded-t-[42px] bg-gradient-to-b from-[#283950] via-[#1a2639] to-[#101827] shadow-2xl ring-1 ring-[#f2c66d]/20" />
         <div className="absolute left-[8%] right-[8%] top-[15%] grid grid-cols-3 gap-2">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -163,6 +283,7 @@ const EnvScene: React.FC<{
         <Sky from="#111b31" to="#3b2c45" />
         {realBackground}
         {paletteOverlay}
+        {atmosphere}
         <div className="absolute left-[9%] top-[8%] h-[25%] w-[50%] rounded-2xl bg-[#243f35] shadow-[0_14px_32px_rgba(0,0,0,0.35)] ring-4 ring-[#7a5638]">
           <div className="absolute left-[8%] top-[20%] font-handw text-xl text-[#e3f1df]/70">Welcome class!</div>
           <div className="absolute bottom-3 left-6 right-6 h-1 rounded-full bg-[#d6a84f]/50" />
@@ -204,6 +325,7 @@ const EnvScene: React.FC<{
         <Sky from="#1b1221" to="#53311f" />
         {realBackground}
         {paletteOverlay}
+        {atmosphere}
         <div className="absolute left-[7%] top-[9%] h-[34%] w-[42%] rounded-[24px] bg-gradient-to-b from-[#d0a76d] to-[#5d3826] shadow-[0_14px_36px_rgba(0,0,0,0.35)] ring-8 ring-[#2b1a16]">
           <div className="grid h-full grid-cols-2 gap-1 p-2">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -216,7 +338,7 @@ const EnvScene: React.FC<{
           {['Latte', 'Mocha', 'Tea'].map((item) => (
             <div key={item} className="mb-1 flex justify-between text-[8px] font-bold text-[#f4e6c8]/75">
               <span>{item}</span>
-              <span>★</span>
+              <span>*</span>
             </div>
           ))}
         </div>
@@ -257,6 +379,7 @@ const EnvScene: React.FC<{
         <Sky from="#120d1d" to="#54263e" />
         {realBackground}
         {paletteOverlay}
+        {atmosphere}
         <div className="absolute left-[6%] right-[6%] top-[5%] h-[9%] rounded-b-3xl bg-[#1b1024] shadow-xl ring-1 ring-[#d6a84f]/20" />
         <div className="absolute left-[16%] top-[11%] h-14 w-14 rounded-full bg-[#d6a84f] opacity-80 blur-xl" />
         <div className="absolute right-[16%] top-[11%] h-14 w-14 rounded-full bg-[#d6a84f] opacity-80 blur-xl" />
@@ -291,6 +414,7 @@ const EnvScene: React.FC<{
         <Sky from="#0b1427" to="#24435f" />
         {realBackground}
         {paletteOverlay}
+        {atmosphere}
         <div className="absolute left-[6%] right-[6%] top-[6%] h-[30%] rounded-[28px] bg-gradient-to-b from-[#b8d8ee] to-[#385875] shadow-2xl ring-4 ring-[#0a1224]">
           <div className="absolute left-[12%] top-[46%] h-4 w-24 rounded-full bg-[#f4e6c8]/65 shadow" />
           <div className="absolute left-[25%] top-[39%] h-8 w-14 rounded-t-full bg-[#f4e6c8]/55" />
@@ -332,6 +456,7 @@ const EnvScene: React.FC<{
         <Sky from="#130c1e" to="#51233c" />
         {realBackground}
         {paletteOverlay}
+        {atmosphere}
         <div className="absolute left-0 right-0 top-[8%] flex justify-around">
           {Array.from({ length: 9 }).map((_, i) => (
             <span key={i} className="ts-star inline-block h-2 w-2 rounded-full bg-amber-300 shadow-[0_0_8px_2px_rgba(251,191,36,0.7)]" style={{ animationDelay: `${i * 0.15}s` }} />
@@ -355,6 +480,7 @@ const EnvScene: React.FC<{
         <Sky from="#241a3a" to="#0f5272" />
         {realBackground}
         {paletteOverlay}
+        {atmosphere}
         <div className="absolute left-[58%] top-[9%] h-20 w-20 rounded-full bg-[#f0a85f] shadow-[0_0_60px_rgba(240,168,95,0.5)]" />
         <div className="absolute inset-x-0 top-[31%] bottom-0 bg-gradient-to-b from-[#28799e] via-[#1b5f84] to-[#123d60]" />
         <div className="ts-scenery absolute left-0 right-0 top-[33%] h-3 bg-white/40 opacity-70" />
@@ -381,6 +507,7 @@ const EnvScene: React.FC<{
       <Sky from="#070817" to="#241a3a" />
       {realBackground}
       {paletteOverlay}
+      {atmosphere}
       <div className="absolute left-[5%] top-[14%] rounded-md bg-[#9f2f3e] px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-[#fff5d8] shadow-[0_0_18px_rgba(159,47,62,0.45)]">
         Exit
       </div>

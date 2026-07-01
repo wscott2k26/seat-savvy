@@ -13,9 +13,10 @@ import { locationFor } from './locations';
 import type { Level } from './types';
 
 const chapterFor = (level: Level) => {
-  if (level.characters.length >= 14) return 'Expert Rush - 14 Seat Challenges';
-  if (level.characters.length >= 12) return 'Hard Crowds - 12 Seat Rooms';
-  if (level.characters.length >= 10) return 'Medium Rooms - 10 Seat Puzzles';
+  if (level.characters.length >= 24) return 'Expert Premium - 24 Seat Rooms';
+  if (level.characters.length >= 20) return 'Hard Crowds - 20 Seat Rooms';
+  if (level.characters.length >= 15) return 'Medium Rooms - 15 Seat Puzzles';
+  if (level.characters.length >= 10) return 'Easy Rooms - 10 Seat Puzzles';
   if (level.id <= 5) return 'Chapter 1 - First Steps';
   if (level.id <= 10) return 'Chapter 2 - Easy Errands';
   if (level.id <= 15) return 'Chapter 3 - Cozy Mix-Ups';
@@ -25,9 +26,10 @@ const chapterFor = (level: Level) => {
 };
 
 const difficultyFor = (level: Level) => {
-  if (level.characters.length >= 14) return 'Expert';
-  if (level.characters.length >= 12) return 'Hard';
-  if (level.characters.length >= 10) return 'Medium';
+  if (level.characters.length >= 24) return 'Expert';
+  if (level.characters.length >= 20) return 'Hard';
+  if (level.characters.length >= 15) return 'Medium';
+  if (level.characters.length >= 10) return 'Easy';
   if (level.id <= 5) return 'Beginner';
   return 'Easy';
 };

@@ -45,7 +45,7 @@ const Seat: React.FC<Props> = ({ seat, env, occupant, violated, nameOf }) => {
         >
           <div className="seat-back absolute -top-3 left-1/2 h-6 w-14 -translate-x-1/2 rounded-t-xl" style={{ background: tint }} />
           {!occupant && (
-            <div className="absolute inset-0 flex flex-wrap items-center justify-center gap-0.5 p-1 text-white/85">
+            <div className="seat-clue-icons absolute inset-0 flex flex-wrap items-center justify-center gap-0.5 p-1 text-white/85">
               {seat.attrs.slice(0, 4).map((a) => (
                 <ClueIcon key={a} name={attrGlyph(a)} size={13} />
               ))}

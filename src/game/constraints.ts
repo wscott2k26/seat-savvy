@@ -17,13 +17,38 @@ export const ATTR_LABEL: Record<SeatAttr, string> = {
 export function clueText(c: Constraint, nameOf: (id: string) => string): string {
   switch (c.type) {
     case 'attr':
-      return `Wants a ${ATTR_LABEL[c.attr!].toLowerCase()}`;
+      return `Wants ${attrPhrase(c.attr!)}`;
     case 'noAttr':
       return `Can't be ${noAttrPhrase(c.attr!)}`;
     case 'beside':
       return `Must sit beside ${nameOf(c.who!)}`;
     case 'notBeside':
       return `Won't sit near ${nameOf(c.who!)}`;
+  }
+}
+
+function attrPhrase(a: SeatAttr): string {
+  switch (a) {
+    case 'window':
+      return 'a window seat';
+    case 'aisle':
+      return 'an aisle seat';
+    case 'legroom':
+      return 'extra leg room';
+    case 'tv':
+      return 'a seat facing the screen';
+    case 'music':
+      return 'to sit near the music';
+    case 'food':
+      return 'to sit near food';
+    case 'sunlight':
+      return 'to sit in the sunlight';
+    case 'quiet':
+      return 'a quiet corner';
+    case 'front':
+      return 'to sit up front';
+    case 'back':
+      return 'to sit in the back';
   }
 }
 

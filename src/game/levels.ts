@@ -1,5 +1,5 @@
 import type { Level, Character, Constraint, SeatAttr } from './types';
-import { EXPANSION_LEVELS } from './generatedLevels';
+import { EXPANSION_LEVELS, rebalanceStoryLevels } from './generatedLevels';
 import {
   busLayout,
   classroomLayout,
@@ -575,7 +575,11 @@ const BASE_LEVELS: Level[] = [
   },
 ];
 
-export const LEVELS: Level[] = [...BASE_LEVELS, ...EXPANSION_LEVELS];
+export const LEVELS: Level[] = [
+  ...BASE_LEVELS.slice(0, 5),
+  ...rebalanceStoryLevels(BASE_LEVELS.slice(5)),
+  ...EXPANSION_LEVELS,
+];
 
 export function levelById(id: number): Level | undefined {
   return LEVELS.find((l) => l.id === id);

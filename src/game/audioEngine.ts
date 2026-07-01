@@ -55,6 +55,14 @@ const SFX_BY_SOUND: Record<GameSound, string> = {
   unlock: 'unlock',
 };
 
+const SYNTH_FALLBACK_SOUNDS = new Set<GameSound>([
+  'correct',
+  'wrong',
+  'coin',
+  'achievement',
+  'win',
+]);
+
 type LoopKind = 'music' | 'ambient';
 
 interface LoopState {
@@ -122,6 +130,11 @@ class BrowserAudioEngine {
       return;
     }
 
+    if (SYNTH_FALLBACK_SOUNDS.has(sound)) {
+      this.playFallbackSound(sound, preferences.sfxVolume);
+      return;
+    }
+
     const basePath = `/audio/sfx/${SFX_BY_SOUND[sound]}`;
     if (this.missingAssets.has(basePath)) {
       this.playFallbackSound(sound, preferences.sfxVolume);
@@ -148,7 +161,7 @@ class BrowserAudioEngine {
   }
 
   private playFallbackSound(sound: GameSound, volume: number) {
-    if (!['correct', 'wrong', 'win', 'achievement'].includes(sound)) return;
+    if (!['correct', 'wrong', 'coin', 'win', 'achievement'].includes(sound)) return;
     if (typeof window === 'undefined') return;
     const AudioContextCtor =
       window.AudioContext ||
@@ -178,15 +191,30 @@ class BrowserAudioEngine {
   ) {
     const now = context.currentTime;
     const master = context.createGain();
+    const peakVolume =
+      sound === 'wrong'
+        ? 0.32
+        : sound === 'win'
+          ? 0.38
+          : sound === 'achievement'
+            ? 0.3
+            : 0.26;
+    const tail =
+      sound === 'wrong'
+        ? 0.42
+        : sound === 'correct'
+          ? 0.46
+          : sound === 'coin'
+            ? 0.36
+            : sound === 'win'
+              ? 1.08
+              : 0.82;
     master.gain.setValueAtTime(0.0001, now);
     master.gain.exponentialRampToValueAtTime(
-      Math.max(0.0001, clamp(volume) * (sound === 'wrong' ? 0.28 : 0.24)),
+      Math.max(0.0001, clamp(volume) * peakVolume),
       now + 0.02,
     );
-    master.gain.exponentialRampToValueAtTime(
-      0.0001,
-      now + (sound === 'wrong' ? 0.42 : sound === 'correct' ? 0.46 : 0.78),
-    );
+    master.gain.exponentialRampToValueAtTime(0.0001, now + tail);
     master.connect(context.destination);
 
     if (sound === 'wrong') {
@@ -198,6 +226,38 @@ class BrowserAudioEngine {
     if (sound === 'correct') {
       this.tone(context, master, 880, now, 0.16, 'triangle', 0.44);
       this.tone(context, master, 1174.66, now + 0.13, 0.22, 'triangle', 0.38);
+      return;
+    }
+
+    if (sound === 'coin') {
+      this.tone(context, master, 988, now, 0.12, 'triangle', 0.42);
+      this.tone(context, master, 1568, now + 0.09, 0.18, 'sine', 0.34);
+      return;
+    }
+
+    if (sound === 'win') {
+      [523.25, 659.25, 783.99, 1046.5, 1318.51].forEach((frequency, index) => {
+        this.tone(
+          context,
+          master,
+          frequency,
+          now + index * 0.09,
+          index === 4 ? 0.42 : 0.26,
+          index >= 3 ? 'triangle' : 'sine',
+          index === 4 ? 0.36 : 0.46,
+        );
+      });
+      [1568, 1760, 2093].forEach((frequency, index) => {
+        this.tone(
+          context,
+          master,
+          frequency,
+          now + 0.42 + index * 0.075,
+          0.18,
+          'triangle',
+          0.18,
+        );
+      });
       return;
     }
 
