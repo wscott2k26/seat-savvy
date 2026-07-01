@@ -300,6 +300,27 @@
   -webkit-line-clamp: 2;
 }
 
+.character-card {
+  min-height: 158px;
+}
+
+.character-clue-row {
+  min-height: 30px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.character-clue-text {
+  display: -webkit-box;
+  min-width: 0;
+  max-height: 2.4em;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 @media (max-height: 740px), (max-width: 380px) {
   [data-play-screen] {
     --seat-size: 2.75rem;
@@ -326,7 +347,8 @@
   }
 
   .character-card {
-    width: 100px !important;
+    width: 146px !important;
+    min-height: 146px;
     border-radius: 18px !important;
     padding: 0.45rem !important;
   }
@@ -344,7 +366,15 @@
     gap: 0.25rem;
   }
 
-  .character-card-clues span {
+  .character-clue-row {
+    min-height: 26px;
+    border-radius: 0.75rem;
+    padding: 0.2rem 0.35rem;
+    font-size: 8px;
+    line-height: 1.05;
+  }
+
+  .character-card-clues > span:not(.character-clue-row) {
     min-width: 0;
     max-width: 100%;
     overflow: hidden;
@@ -354,11 +384,10 @@
     line-height: 1.05;
   }
 
-  .character-card-clues span span {
+  .character-clue-text {
     min-width: 0;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
   }
 
   .seat-name-label {

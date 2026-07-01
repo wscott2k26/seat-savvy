@@ -22,23 +22,23 @@ const CharacterTray: React.FC = () => {
       <div className="mb-2 flex items-center justify-between px-1">
         <p className="text-xs font-black uppercase tracking-[0.14em] text-[#d6a84f]">
           {unplaced.length > 0
-            ? `Seat everyone · ${unplaced.length} left`
+            ? `Seat everyone - ${unplaced.length} left`
             : 'Everyone is seated!'}
         </p>
         <span className="rounded-full border border-[#d6a84f]/22 bg-[#d6a84f]/12 px-2 py-1 text-[10px] font-extrabold text-[#f6d98d]">
           Clues
         </span>
       </div>
-      <div className="flex gap-3 overflow-x-auto pb-1">
+      <div className="flex gap-3 overflow-x-auto pb-2">
         {unplaced.length === 0 && (
           <div className="flex h-[104px] flex-1 items-center justify-center rounded-3xl border border-white/10 bg-white/8 text-sm font-bold text-[#a9a0b5] shadow-inner">
-            Tray empty — nicely done.
+            Tray empty - nicely done.
           </div>
         )}
         {unplaced.map((c) => (
           <div
             key={c.id}
-            className={`character-card group relative flex w-[118px] shrink-0 flex-col items-center rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,245,216,0.12),rgba(214,168,79,0.08))] p-2.5 shadow-[0_12px_26px_rgba(0,0,0,0.28)] ring-1 ring-[#d6a84f]/14 transition ${
+            className={`character-card group relative flex w-[158px] shrink-0 flex-col items-center rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,245,216,0.12),rgba(214,168,79,0.08))] p-2.5 shadow-[0_12px_26px_rgba(0,0,0,0.28)] ring-1 ring-[#d6a84f]/14 transition ${
               draggingId === c.id ? 'opacity-30' : 'hover:-translate-y-0.5'
             }`}
           >
@@ -64,19 +64,21 @@ const CharacterTray: React.FC = () => {
               {c.trait}
             </p>
             <div className="character-card-clues mt-1 grid w-full gap-1 text-[#d9cda9]">
-              {c.constraints.slice(0, 2).map((cl, i) => (
+              {c.constraints.slice(0, 3).map((cl, i) => (
                 <span
                   key={i}
                   title={clueText(cl, nameOf)}
-                  className="flex items-center gap-1 rounded-xl border border-white/10 bg-[#050816]/45 px-1.5 py-1 text-[9px] font-bold text-[#eadfcb] shadow-inner"
+                  className="character-clue-row flex items-start gap-1.5 rounded-xl border border-white/10 bg-[#050816]/45 px-1.5 py-1 text-[9px] font-bold leading-tight text-[#eadfcb] shadow-inner"
                 >
-                  <ClueIcon name={clueIcon(cl)} size={12} />
-                  <span className="truncate">{clueText(cl, nameOf)}</span>
+                  <span className="mt-0.5 shrink-0">
+                    <ClueIcon name={clueIcon(cl)} size={12} />
+                  </span>
+                  <span className="character-clue-text">{clueText(cl, nameOf)}</span>
                 </span>
               ))}
-              {c.constraints.length > 2 && (
+              {c.constraints.length > 3 && (
                 <span className="rounded-xl border border-white/10 bg-white/8 px-1.5 py-0.5 text-center text-[9px] font-bold text-[#a9a0b5]">
-                  +{c.constraints.length - 2} more
+                  +{c.constraints.length - 3} more
                 </span>
               )}
             </div>

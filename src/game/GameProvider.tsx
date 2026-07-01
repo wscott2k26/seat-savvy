@@ -537,6 +537,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     const unlockAudio = () => {
+      getAudioEngine().unlock(progress.settings);
       getAudioEngine().sync(progress.settings, activeAudioEnvironment);
     };
     window.addEventListener('pointerdown', unlockAudio, { capture: true });
@@ -1047,21 +1048,27 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
   const upgradeHome = useCallback(
     (homeId: string): boolean => {
       const home = homeById(homeId);
+      const ownedHomes = new Set([
+        'tiny-studio',
+        progress.life.homeId,
+        ...(progress.life.ownedHomes ?? []),
+      ]);
+      const alreadyOwned = ownedHomes.has(home.id);
       if (home.id === progress.life.homeId) {
         setNotice({ title: 'Already home', text: `${home.label} is your current home.` });
         return false;
       }
-      if (home.premium && !progress.premium) {
+      if (!alreadyOwned && home.premium && !progress.premium) {
         playSound('lock');
         setNotice({ title: 'Premium home preview', text: `${home.label} is reserved for a future premium season.` });
         return false;
       }
-      if (home.starsRequired && totalStars(progress.stars) < home.starsRequired) {
+      if (!alreadyOwned && home.starsRequired && totalStars(progress.stars) < home.starsRequired) {
         playSound('wrong');
         setNotice({ title: 'More stars needed', text: `${home.label} unlocks at ${home.starsRequired} total stars.` });
         return false;
       }
-      if (progress.coins < home.cost) {
+      if (!alreadyOwned && progress.coins < home.cost) {
         playSound('wrong');
         setNotice({ title: 'Need more coins', text: `${home.label} costs ${home.cost} coins.` });
         return false;
@@ -1070,19 +1077,43 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
       setProgress((p) => {
         const nextProgress: Progress = {
           ...p,
-          coins: p.coins - home.cost,
+          coins: alreadyOwned ? p.coins : p.coins - home.cost,
           life: {
             ...p.life,
             homeId: home.id,
+            ownedHomes: unique([
+              'tiny-studio',
+              ...(p.life.ownedHomes ?? []),
+              home.id,
+            ]),
+            daily: {
+              ...p.life.daily,
+              visitedHome: true,
+            },
           },
         };
-        return addAchievements(nextProgress, ['first-home-upgrade']).progress;
+        return alreadyOwned
+          ? nextProgress
+          : addAchievements(nextProgress, ['first-home-upgrade']).progress;
       });
-      playSound('unlock');
-      setNotice({ title: 'Home upgraded', text: `${home.label} is ready to decorate.` });
+      playSound(alreadyOwned ? 'button' : 'unlock');
+      triggerHaptic(alreadyOwned ? 'tap' : 'achievement');
+      setNotice(
+        alreadyOwned
+          ? { title: 'Moved in', text: `${home.label} is active again. No coins spent.` }
+          : { title: 'New home unlocked', text: `${home.label} is ready to decorate.` },
+      );
       return true;
     },
-    [playSound, progress.coins, progress.life.homeId, progress.premium, progress.stars],
+    [
+      playSound,
+      progress.coins,
+      progress.life.homeId,
+      progress.life.ownedHomes,
+      progress.premium,
+      progress.stars,
+      triggerHaptic,
+    ],
   );
 
   const claimDailyReward = useCallback((): boolean => {

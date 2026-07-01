@@ -63,6 +63,7 @@ export interface LifeProgress {
   ownedItems: string[];
   equippedDecor: string[];
   selectedPet: string;
+  ownedHomes: string[];
   homeId: string;
   claimedAchievements: string[];
   daily: DailyProgress;
@@ -365,6 +366,7 @@ export const DEFAULT_LIFE_PROGRESS: LifeProgress = {
     'worn-floor',
   ],
   selectedPet: 'cat-pet',
+  ownedHomes: ['tiny-studio'],
   homeId: 'tiny-studio',
   claimedAchievements: [],
   daily: freshDaily(),
@@ -392,6 +394,11 @@ export function normalizeLife(life?: Partial<LifeProgress>): LifeProgress {
     equippedDecor: unique([
       ...DEFAULT_LIFE_PROGRESS.equippedDecor,
       ...(life?.equippedDecor ?? []),
+    ]),
+    ownedHomes: unique([
+      'tiny-studio',
+      life?.homeId ?? DEFAULT_LIFE_PROGRESS.homeId,
+      ...(life?.ownedHomes ?? []),
     ]),
     claimedAchievements: unique(life?.claimedAchievements ?? []),
     daily,

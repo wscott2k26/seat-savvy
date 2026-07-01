@@ -61,6 +61,7 @@ const SYNTH_FALLBACK_SOUNDS = new Set<GameSound>([
   'coin',
   'achievement',
   'win',
+  'unlock',
 ]);
 
 type LoopKind = 'music' | 'ambient';
@@ -79,6 +80,41 @@ class BrowserAudioEngine {
 
   private missingAssets = new Set<string>();
   private audioContext: AudioContext | null = null;
+
+  unlock(preferences: AudioPreferences) {
+    if (
+      typeof window === 'undefined' ||
+      preferences.muteAll ||
+      !preferences.sfxOn
+    ) {
+      return;
+    }
+
+    const context = this.ensureAudioContext();
+    if (!context) return;
+
+    const prime = () => {
+      try {
+        const now = context.currentTime;
+        const gain = context.createGain();
+        const osc = context.createOscillator();
+        gain.gain.setValueAtTime(0.0001, now);
+        osc.frequency.setValueAtTime(24, now);
+        osc.connect(gain);
+        gain.connect(context.destination);
+        osc.start(now);
+        osc.stop(now + 0.025);
+      } catch (error) {
+        devAudioLog('Audio unlock failed', 'web-audio', error);
+      }
+    };
+
+    if (context.state === 'suspended') {
+      void context.resume().then(prime).catch(() => undefined);
+      return;
+    }
+    prime();
+  }
 
   sync(preferences: AudioPreferences, environment?: AudioEnvironment) {
     if (typeof window === 'undefined' || typeof Audio === 'undefined') return;
@@ -161,17 +197,11 @@ class BrowserAudioEngine {
   }
 
   private playFallbackSound(sound: GameSound, volume: number) {
-    if (!['correct', 'wrong', 'coin', 'win', 'achievement'].includes(sound)) return;
-    if (typeof window === 'undefined') return;
-    const AudioContextCtor =
-      window.AudioContext ||
-      (window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext })
-        .webkitAudioContext;
-    if (!AudioContextCtor) return;
+    if (!['correct', 'wrong', 'coin', 'win', 'achievement', 'unlock'].includes(sound)) return;
+    const context = this.ensureAudioContext();
+    if (!context) return;
 
     try {
-      const context = this.audioContext ?? new AudioContextCtor();
-      this.audioContext = context;
       const startSound = () => this.startFallbackSound(context, sound, volume);
 
       if (context.state === 'suspended') {
@@ -181,6 +211,23 @@ class BrowserAudioEngine {
       }
     } catch (error) {
       devAudioLog('Web Audio fallback failed', sound, error);
+    }
+  }
+
+  private ensureAudioContext(): AudioContext | null {
+    if (typeof window === 'undefined') return null;
+    const AudioContextCtor =
+      window.AudioContext ||
+      (window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
+    if (!AudioContextCtor) return null;
+
+    try {
+      this.audioContext = this.audioContext ?? new AudioContextCtor();
+      return this.audioContext;
+    } catch (error) {
+      devAudioLog('Audio context failed', 'web-audio', error);
+      return null;
     }
   }
 
@@ -195,7 +242,9 @@ class BrowserAudioEngine {
       sound === 'wrong'
         ? 0.32
         : sound === 'win'
-          ? 0.38
+          ? 0.46
+          : sound === 'unlock'
+            ? 0.34
           : sound === 'achievement'
             ? 0.3
             : 0.26;
@@ -207,8 +256,10 @@ class BrowserAudioEngine {
           : sound === 'coin'
             ? 0.36
             : sound === 'win'
-              ? 1.08
-              : 0.82;
+              ? 1.45
+              : sound === 'unlock'
+                ? 0.72
+                : 0.82;
     master.gain.setValueAtTime(0.0001, now);
     master.gain.exponentialRampToValueAtTime(
       Math.max(0.0001, clamp(volume) * peakVolume),
@@ -235,7 +286,16 @@ class BrowserAudioEngine {
       return;
     }
 
+    if (sound === 'unlock') {
+      this.tone(context, master, 392, now, 0.18, 'triangle', 0.34, 523.25);
+      this.tone(context, master, 659.25, now + 0.12, 0.22, 'sine', 0.4);
+      this.tone(context, master, 987.77, now + 0.27, 0.34, 'triangle', 0.32);
+      this.tone(context, master, 1318.51, now + 0.34, 0.2, 'sine', 0.16);
+      return;
+    }
+
     if (sound === 'win') {
+      this.crowdCheer(context, master, now);
       [523.25, 659.25, 783.99, 1046.5, 1318.51].forEach((frequency, index) => {
         this.tone(
           context,
@@ -272,6 +332,81 @@ class BrowserAudioEngine {
         index === 3 ? 0.34 : 0.48,
       );
     });
+  }
+
+  private crowdCheer(
+    context: AudioContext,
+    destination: AudioNode,
+    start: number,
+  ) {
+    this.noiseBurst(context, destination, start, 1.15, 780, 0.22, 0.82);
+    this.noiseBurst(context, destination, start + 0.08, 0.92, 1280, 0.16, 1.15);
+
+    for (let i = 0; i < 12; i += 1) {
+      const offset = 0.05 + i * 0.085 + (i % 3) * 0.018;
+      this.noiseBurst(
+        context,
+        destination,
+        start + offset,
+        0.06,
+        1300 + (i % 4) * 220,
+        0.28,
+        2.6,
+      );
+    }
+
+    [
+      [740, 1180, 0.06],
+      [880, 1480, 0.18],
+      [660, 1040, 0.34],
+      [990, 1760, 0.5],
+    ].forEach(([from, to, offset]) => {
+      this.tone(
+        context,
+        destination,
+        from,
+        start + offset,
+        0.34,
+        'sine',
+        0.16,
+        to,
+      );
+    });
+  }
+
+  private noiseBurst(
+    context: AudioContext,
+    destination: AudioNode,
+    start: number,
+    duration: number,
+    frequency: number,
+    gainValue: number,
+    q: number,
+  ) {
+    const sampleCount = Math.max(1, Math.floor(context.sampleRate * duration));
+    const buffer = context.createBuffer(1, sampleCount, context.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < sampleCount; i += 1) {
+      const progress = i / sampleCount;
+      const envelope = Math.sin(Math.PI * progress);
+      data[i] = (Math.random() * 2 - 1) * envelope;
+    }
+
+    const source = context.createBufferSource();
+    const filter = context.createBiquadFilter();
+    const gain = context.createGain();
+    source.buffer = buffer;
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(frequency, start);
+    filter.Q.setValueAtTime(q, start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(gainValue, start + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(destination);
+    source.start(start);
+    source.stop(start + duration + 0.03);
   }
 
   private tone(

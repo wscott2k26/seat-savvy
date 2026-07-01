@@ -60,6 +60,15 @@ const HomeScreen: React.FC = () => {
     () => new Set(progress.life.ownedItems),
     [progress.life.ownedItems],
   );
+  const ownedHomes = useMemo(
+    () =>
+      new Set([
+        'tiny-studio',
+        progress.life.homeId,
+        ...(progress.life.ownedHomes ?? []),
+      ]),
+    [progress.life.homeId, progress.life.ownedHomes],
+  );
   const selectedPet = itemById(progress.life.selectedPet);
   const stars = totalStars(progress.stars);
   const homeItems = SHOP_ITEMS.filter((item) => HOME_ITEM_KINDS.has(item.kind));
@@ -173,8 +182,10 @@ const HomeScreen: React.FC = () => {
               <HomeUpgradeCard
                 key={candidate.id}
                 active={candidate.id === progress.life.homeId}
+                canAfford={progress.coins >= candidate.cost}
                 home={candidate}
                 lockedStars={!!candidate.starsRequired && stars < candidate.starsRequired}
+                owned={ownedHomes.has(candidate.id)}
                 onClick={() => upgradeHome(candidate.id)}
               />
             ))}
@@ -198,6 +209,7 @@ const RoomScene: React.FC<{
       <div className="absolute inset-x-0 bottom-[38%] h-10 bg-[linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,0.24))]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_48%_10%,rgba(255,220,150,0.16),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.06),transparent_42%,rgba(0,0,0,0.38))]" />
 
+      <HomeArchitecture homeId={home.id} />
       <Window mood={mood} />
       <KitchenCompact />
       <FloorLamp />
@@ -303,6 +315,89 @@ function roomMood(homeId: string, equipped: Set<string>) {
 
   return moods[homeId] ?? moods['tiny-studio'];
 }
+
+const HomeArchitecture: React.FC<{ homeId: string }> = ({ homeId }) => {
+  if (homeId === 'small-trailer') {
+    return (
+      <>
+        <span className="absolute left-[4%] right-[4%] top-[14%] h-5 rounded-full bg-[#d6a84f]/18 shadow-[0_0_18px_rgba(214,168,79,0.12)]" />
+        <span className="absolute left-[8%] top-[18%] h-16 w-28 rounded-[26px] border-4 border-[#050816]/70 bg-[#8aa3b9]/36" />
+        <span className="absolute right-[8%] bottom-[18%] h-14 w-24 rounded-t-3xl bg-[#25303a]/72 shadow-xl" />
+      </>
+    );
+  }
+  if (homeId === 'starter-apartment') {
+    return (
+      <>
+        <span className="absolute left-[7%] top-[16%] h-24 w-24 rounded-t-[46px] border-4 border-[#805d38]/70 bg-[#9fb6d9]/22 shadow-xl" />
+        <span className="absolute left-[8%] right-[42%] top-[43%] h-3 rounded-full bg-[#9b7045]/70" />
+        <span className="absolute left-[12%] top-[37%] h-12 w-24 rounded-2xl bg-[#101827]/55" />
+      </>
+    );
+  }
+  if (homeId === 'city-apartment') {
+    return (
+      <>
+        <span className="absolute left-[6%] top-[10%] h-[46%] w-16 rounded-2xl border border-[#9fb6d9]/24 bg-[#13223a]/72 shadow-xl" />
+        <span className="absolute left-[24%] top-[10%] h-[46%] w-16 rounded-2xl border border-[#9fb6d9]/24 bg-[#13223a]/72 shadow-xl" />
+        <span className="absolute left-[7%] top-[31%] h-px w-[33%] bg-white/20" />
+      </>
+    );
+  }
+  if (homeId === 'cozy-cabin') {
+    return (
+      <>
+        <span className="absolute left-0 right-0 top-[22%] h-4 bg-[repeating-linear-gradient(90deg,#6b4426_0_28px,#4a2f1c_28px_56px)] shadow-lg" />
+        <span className="absolute left-[10%] top-[9%] h-[48%] w-4 rounded-full bg-[#6b4426]/82" />
+        <span className="absolute right-[12%] top-[9%] h-[48%] w-4 rounded-full bg-[#6b4426]/82" />
+      </>
+    );
+  }
+  if (homeId === 'beach-cottage') {
+    return (
+      <>
+        <span className="absolute left-[6%] top-[14%] h-28 w-32 rounded-t-[58px] border-4 border-[#eadfcb]/45 bg-[#8db8c7]/28 shadow-xl" />
+        <span className="absolute left-[7%] right-[7%] top-[50%] h-2 rounded-full bg-[#eadfcb]/28" />
+        <span className="absolute left-[13%] top-[49%] h-16 w-24 rounded-t-[38px] bg-[#d6a84f]/18" />
+      </>
+    );
+  }
+  if (homeId === 'city-loft') {
+    return (
+      <>
+        <span className="absolute left-[5%] right-[5%] top-[9%] h-px bg-[#d6a84f]/30" />
+        <span className="absolute left-[7%] top-[11%] h-[52%] w-20 rounded-xl border border-[#9fb6d9]/22 bg-[#08111f]/72" />
+        <span className="absolute left-[31%] top-[11%] h-[52%] w-20 rounded-xl border border-[#9fb6d9]/22 bg-[#08111f]/72" />
+        <span className="absolute left-[7%] top-[36%] h-px w-[45%] bg-white/18" />
+      </>
+    );
+  }
+  if (homeId === 'lake-house') {
+    return (
+      <>
+        <span className="absolute left-[7%] top-[13%] h-28 w-36 rounded-[30px] border-4 border-[#6a4a2e]/70 bg-[#7aa5c7]/24 shadow-xl" />
+        <span className="absolute left-[7%] right-[7%] bottom-[39%] h-3 rounded-full bg-[#6a4a2e]/64" />
+        <span className="absolute left-[15%] bottom-[34%] h-10 w-28 rounded-t-2xl bg-[#24382f]/64" />
+      </>
+    );
+  }
+  if (homeId === 'luxury-penthouse') {
+    return (
+      <>
+        <span className="absolute left-[4%] top-[8%] h-[58%] w-[26%] rounded-3xl border border-[#d6a84f]/22 bg-[#071022]/72 shadow-2xl" />
+        <span className="absolute left-[34%] top-[8%] h-[58%] w-[26%] rounded-3xl border border-[#d6a84f]/22 bg-[#071022]/72 shadow-2xl" />
+        <span className="absolute right-[8%] top-[26%] h-24 w-20 rounded-t-[36px] bg-[#d6a84f]/16 shadow-xl" />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <span className="absolute left-[8%] top-[16%] h-20 w-28 rounded-3xl border border-[#f6d98d]/16 bg-[#9fb6d9]/18 shadow-xl" />
+      <span className="absolute left-[9%] top-[45%] h-3 w-36 rounded-full bg-[#8a623b]/56" />
+    </>
+  );
+};
 
 const Window: React.FC<{ mood: { view: string } }> = ({ mood }) => {
   const backgrounds: Record<string, string> = {
@@ -519,50 +614,76 @@ const DecorCard: React.FC<{
 
 const HomeUpgradeCard: React.FC<{
   active: boolean;
+  canAfford: boolean;
   home: HomeUpgrade;
   lockedStars: boolean;
+  owned: boolean;
   onClick: () => boolean;
-}> = ({ active, home, lockedStars, onClick }) => (
-  <button
-    onClick={onClick}
-    className={`w-full overflow-hidden rounded-[24px] border p-3 text-left shadow-[0_16px_30px_rgba(0,0,0,0.32)] transition hover:-translate-y-0.5 active:scale-[0.99] ${
-      active
-        ? 'border-[#d6a84f]/60 bg-[#d6a84f]/16'
-        : 'border-white/10 bg-white/8'
-    }`}
-    type="button"
-  >
-    <div className="flex gap-3">
-      <div className="h-16 w-20 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-[#050816]">
-        <MiniRoom homeId={home.id} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <span className="font-display text-sm font-black text-[#fff5d8]">
-            {home.label}
-          </span>
-          {active && (
-            <span className="rounded-full bg-[#d6a84f] px-2 py-0.5 text-[10px] font-black text-[#15101f]">
-              Active
+}> = ({ active, canAfford, home, lockedStars, owned, onClick }) => {
+  const status = active
+    ? 'Current'
+    : owned
+      ? 'Move in'
+      : lockedStars
+        ? 'Locked'
+        : !canAfford
+          ? 'Need coins'
+          : 'Buy';
+  const statusClass = active
+    ? 'bg-[#d6a84f] text-[#15101f]'
+    : owned
+      ? 'bg-[#b7d6c8] text-[#102018]'
+      : lockedStars || !canAfford
+        ? 'border border-white/10 bg-white/8 text-[#a9a0b5]'
+        : 'bg-[#f6d98d] text-[#15101f]';
+
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full overflow-hidden rounded-[24px] border p-3 text-left shadow-[0_16px_30px_rgba(0,0,0,0.32)] transition hover:-translate-y-0.5 active:scale-[0.99] ${
+        active
+          ? 'border-[#d6a84f]/70 bg-[#d6a84f]/18 shadow-[0_18px_36px_rgba(214,168,79,0.16)]'
+          : owned
+            ? 'border-[#b7d6c8]/36 bg-[#b7d6c8]/10'
+            : 'border-white/10 bg-white/8'
+      }`}
+      type="button"
+    >
+      <div className="flex gap-3">
+        <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-[#050816]">
+          <MiniRoom homeId={home.id} />
+          {owned && !active && (
+            <span className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-[#b7d6c8] text-[#102018] shadow">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
             </span>
           )}
         </div>
-        <p className="mt-1 line-clamp-2 text-xs font-semibold text-[#a9a0b5]">
-          {home.description}
-        </p>
-        <p className="mt-2 text-[10px] font-black uppercase tracking-wide text-[#d6a84f]">
-          {homePriceLabel(home)}
-          {lockedStars ? ' / locked' : ''}
-        </p>
-        {home.premium && (
-          <p className="mt-1 text-[10px] font-black uppercase tracking-wide text-[#a9a0b5]">
-            Premium placeholder
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <span className="font-display text-sm font-black text-[#fff5d8]">
+              {home.label}
+            </span>
+            <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black ${statusClass}`}>
+              {status}
+            </span>
+          </div>
+          <p className="mt-1 line-clamp-2 text-xs font-semibold text-[#a9a0b5]">
+            {home.description}
           </p>
-        )}
+          <p className="mt-2 text-[10px] font-black uppercase tracking-wide text-[#d6a84f]">
+            {owned ? 'Owned' : homePriceLabel(home)}
+            {lockedStars && !owned ? ' / locked' : ''}
+          </p>
+          {home.premium && !owned && (
+            <p className="mt-1 text-[10px] font-black uppercase tracking-wide text-[#a9a0b5]">
+              Premium home
+            </p>
+          )}
+        </div>
       </div>
-    </div>
-  </button>
-);
+    </button>
+  );
+};
 
 const ItemThumbnail: React.FC<{ item: ShopItem }> = ({ item }) => (
   <ShopItemPreview item={item} />
@@ -570,9 +691,108 @@ const ItemThumbnail: React.FC<{ item: ShopItem }> = ({ item }) => (
 
 const MiniRoom: React.FC<{ homeId: string }> = ({ homeId }) => {
   const mood = roomMood(homeId, new Set());
+  const floor = (
+    <div
+      className="absolute inset-x-0 bottom-0 h-7"
+      style={{ background: mood.floor }}
+    />
+  );
+
+  if (homeId === 'small-trailer') {
+    return (
+      <div className="relative h-full w-full" style={{ background: mood.wall }}>
+        {floor}
+        <span className="absolute left-2 right-2 top-2 h-3 rounded-full bg-[#d6a84f]/24" />
+        <span className="absolute left-2 top-5 h-6 w-8 rounded-xl bg-[#9fb6d9]/48 ring-1 ring-white/20" />
+        <span className="absolute right-2 bottom-3 h-5 w-8 rounded-t-2xl bg-[#25303a]" />
+        <span className="absolute left-4 bottom-1 h-2 w-2 rounded-full bg-black/45" />
+      </div>
+    );
+  }
+
+  if (homeId === 'starter-apartment') {
+    return (
+      <div className="relative h-full w-full" style={{ background: mood.wall }}>
+        {floor}
+        <span className="absolute left-2 top-2 h-9 w-9 rounded-t-[18px] bg-[#9fb6d9]/42 ring-2 ring-[#805d38]/60" />
+        <span className="absolute right-2 top-5 h-2 w-9 rounded bg-[#9b7045]" />
+        <span className="absolute bottom-3 left-3 h-4 w-10 rounded-lg bg-[#6a4a75]" />
+      </div>
+    );
+  }
+
+  if (homeId === 'city-apartment') {
+    return (
+      <div className="relative h-full w-full" style={{ background: mood.wall }}>
+        {floor}
+        <span className="absolute left-2 top-2 h-10 w-5 rounded-md bg-[#13223a] ring-1 ring-[#9fb6d9]/35" />
+        <span className="absolute left-8 top-2 h-10 w-5 rounded-md bg-[#13223a] ring-1 ring-[#9fb6d9]/35" />
+        <span className="absolute bottom-3 right-2 h-5 w-9 rounded-lg bg-[#34445d]" />
+      </div>
+    );
+  }
+
+  if (homeId === 'cozy-cabin') {
+    return (
+      <div className="relative h-full w-full" style={{ background: mood.wall }}>
+        {floor}
+        <span className="absolute left-0 right-0 top-4 h-2 bg-[#6b4426]" />
+        <span className="absolute left-2 top-2 h-11 w-2 rounded-full bg-[#6b4426]" />
+        <span className="absolute right-3 bottom-3 h-6 w-8 rounded-t-2xl bg-[#2b1c22]" />
+        <span className="absolute right-5 bottom-4 h-4 w-2 rounded-full bg-[#f0c76a]" />
+      </div>
+    );
+  }
+
+  if (homeId === 'beach-cottage') {
+    return (
+      <div className="relative h-full w-full" style={{ background: mood.wall }}>
+        {floor}
+        <span className="absolute left-2 top-3 h-9 w-10 rounded-t-[22px] bg-[#8db8c7]/48 ring-2 ring-[#eadfcb]/40" />
+        <span className="absolute right-2 top-4 h-7 w-7 rounded-full bg-[#f0c76a]/45" />
+        <span className="absolute bottom-3 left-3 h-4 w-11 rounded-full bg-[#d6a84f]/38" />
+      </div>
+    );
+  }
+
+  if (homeId === 'city-loft') {
+    return (
+      <div className="relative h-full w-full" style={{ background: mood.wall }}>
+        {floor}
+        <span className="absolute left-2 top-2 h-11 w-6 rounded-md bg-[#08111f] ring-1 ring-[#9fb6d9]/30" />
+        <span className="absolute left-10 top-2 h-11 w-6 rounded-md bg-[#08111f] ring-1 ring-[#9fb6d9]/30" />
+        <span className="absolute left-2 right-2 top-6 h-px bg-white/20" />
+        <span className="absolute bottom-3 right-3 h-5 w-9 rounded bg-[#8a5a2b]" />
+      </div>
+    );
+  }
+
+  if (homeId === 'lake-house') {
+    return (
+      <div className="relative h-full w-full" style={{ background: mood.wall }}>
+        {floor}
+        <span className="absolute left-2 top-3 h-8 w-12 rounded-xl bg-[#7aa5c7]/38 ring-2 ring-[#6a4a2e]/60" />
+        <span className="absolute left-1 right-1 bottom-7 h-1.5 rounded-full bg-[#6a4a2e]" />
+        <span className="absolute bottom-3 left-4 h-4 w-11 rounded-t-xl bg-[#24382f]" />
+      </div>
+    );
+  }
+
+  if (homeId === 'luxury-penthouse') {
+    return (
+      <div className="relative h-full w-full" style={{ background: mood.wall }}>
+        {floor}
+        <span className="absolute left-2 top-2 h-11 w-6 rounded-lg bg-[#071022] ring-1 ring-[#d6a84f]/30" />
+        <span className="absolute left-9 top-2 h-11 w-6 rounded-lg bg-[#071022] ring-1 ring-[#d6a84f]/30" />
+        <span className="absolute right-2 bottom-3 h-7 w-5 rounded-t-xl bg-[#d6a84f]/30" />
+        <span className="absolute left-2 right-2 top-1 h-px bg-[#d6a84f]/45" />
+      </div>
+    );
+  }
+
   return (
     <div className="relative h-full w-full" style={{ background: mood.wall }}>
-      <div className="absolute inset-x-0 bottom-0 h-7" style={{ background: mood.floor }} />
+      {floor}
       <span className="absolute right-2 top-2 h-7 w-7 rounded-lg bg-[#9fb6d9]/50 ring-1 ring-white/20" />
       <span className="absolute bottom-3 left-2 h-4 w-10 rounded-lg bg-[#54415d]" />
       <span className="absolute bottom-4 right-3 h-2 w-8 rounded bg-[#8a5a2b]" />
