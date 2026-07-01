@@ -266,7 +266,7 @@ const LevelSelect: React.FC<{
               onClick={onPremium}
               className="mt-3 rounded-full bg-[#d6a84f] px-4 py-2 text-sm font-extrabold text-[#15101f] shadow-[0_10px_24px_rgba(214,168,79,0.24)]"
             >
-              Preview Full Adventure
+              Unlock Full Adventure
             </button>
           </div>
         )}

@@ -306,7 +306,7 @@ function roomMood(homeId: string, equipped: Set<string>) {
       floor: 'repeating-linear-gradient(105deg,#73512f 0 22px,#52371f 22px 44px)',
     },
     'luxury-penthouse': {
-      kicker: 'Future premium',
+      kicker: 'Full Adventure',
       view: 'skyline',
       wall: 'linear-gradient(135deg,#050816,#171122 46%,#1d1731)',
       floor: 'repeating-linear-gradient(105deg,#87633b 0 24px,#604627 24px 48px)',

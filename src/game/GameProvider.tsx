@@ -43,6 +43,13 @@ import {
   type CompletionRewards,
   type LifeProgress,
 } from './lifeData';
+import {
+  FULL_ADVENTURE_PRODUCT_ID,
+  onPremiumOwned,
+  purchaseFullAdventure,
+  restoreFullAdventure,
+  type PremiumPurchaseResult,
+} from './premiumPurchase';
 
 const FREE_LEVELS = 39;
 
@@ -184,6 +191,8 @@ interface GameCtx {
   updateCustomization: (
     updater: (customization: CustomizationState) => CustomizationState,
   ) => void;
+  purchasePremium: () => Promise<PremiumPurchaseResult>;
+  restorePremium: () => Promise<PremiumPurchaseResult>;
   buyShopItem: (itemId: string) => boolean;
   toggleDecorItem: (itemId: string) => void;
   selectPet: (itemId: string) => void;
@@ -586,6 +595,32 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
     [progress.settings],
   );
 
+  const grantPremium = useCallback(
+    (source: 'purchase' | 'restore' | 'local', silent = false) => {
+      setProgress((p) => {
+        if (p.premium) return p;
+        return {
+          ...p,
+          premium: true,
+          hints: Math.max(p.hints, 12),
+        };
+      });
+      if (!silent) {
+        playSound('unlock');
+        triggerHaptic('achievement');
+        setNotice({
+          title: source === 'restore' ? 'Full Adventure restored' : 'Full Adventure unlocked',
+          text: 'Premium chapters, unlimited hints, exclusive rewards, and premium homes are ready.',
+        });
+      }
+    },
+    [playSound, triggerHaptic],
+  );
+
+  useEffect(() => {
+    return onPremiumOwned(() => grantPremium('restore', true));
+  }, [grantPremium]);
+
   const charBySeat = useMemo(() => {
     const m: Record<string, string> = {};
     for (const [charId, seatId] of Object.entries(placement)) m[seatId] = charId;
@@ -947,6 +982,53 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
     [],
   );
 
+  const purchasePremium = useCallback(async (): Promise<PremiumPurchaseResult> => {
+    if (progress.premium) {
+      const result: PremiumPurchaseResult = {
+        status: 'already-owned',
+        source: 'local',
+        productId: FULL_ADVENTURE_PRODUCT_ID,
+        message: 'Full Adventure is already unlocked.',
+      };
+      setNotice({ title: 'Full Adventure active', text: result.message });
+      return result;
+    }
+
+    playSound('button');
+    triggerHaptic('tap');
+    const result = await purchaseFullAdventure();
+    if (
+      result.status === 'purchased' ||
+      result.status === 'restored' ||
+      result.status === 'already-owned'
+    ) {
+      grantPremium(result.status === 'restored' ? 'restore' : 'purchase');
+    } else if (result.status === 'pending') {
+      setNotice({ title: 'Purchase pending', text: result.message });
+    } else if (result.status !== 'cancelled') {
+      playSound('wrong');
+      setNotice({ title: 'Purchase unavailable', text: result.message });
+    }
+    return result;
+  }, [grantPremium, playSound, progress.premium, triggerHaptic]);
+
+  const restorePremium = useCallback(async (): Promise<PremiumPurchaseResult> => {
+    playSound('button');
+    triggerHaptic('tap');
+    const result = await restoreFullAdventure();
+    if (
+      result.status === 'restored' ||
+      result.status === 'purchased' ||
+      result.status === 'already-owned'
+    ) {
+      grantPremium('restore');
+    } else if (result.status !== 'cancelled') {
+      playSound('wrong');
+      setNotice({ title: 'Restore unavailable', text: result.message });
+    }
+    return result;
+  }, [grantPremium, playSound, triggerHaptic]);
+
   const buyShopItem = useCallback(
     (itemId: string): boolean => {
       const item = itemById(itemId);
@@ -957,7 +1039,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
       }
       if (item.premium && !progress.premium) {
         playSound('lock');
-        setNotice({ title: 'Premium preview', text: `${item.label} is part of a future premium collection.` });
+        setNotice({ title: 'Full Adventure required', text: `${item.label} unlocks with the Full Adventure.` });
         return false;
       }
       const starCount = totalStars(progress.stars);
@@ -1060,7 +1142,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
       }
       if (!alreadyOwned && home.premium && !progress.premium) {
         playSound('lock');
-        setNotice({ title: 'Premium home preview', text: `${home.label} is reserved for a future premium season.` });
+        setNotice({ title: 'Full Adventure required', text: `${home.label} unlocks with the Full Adventure.` });
         return false;
       }
       if (!alreadyOwned && home.starsRequired && totalStars(progress.stars) < home.starsRequired) {
@@ -1310,6 +1392,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
     isUnlocked,
     updateSettings,
     updateCustomization,
+    purchasePremium,
+    restorePremium,
     buyShopItem,
     toggleDecorItem,
     selectPet,

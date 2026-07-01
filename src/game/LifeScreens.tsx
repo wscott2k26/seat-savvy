@@ -149,7 +149,7 @@ const ShopCard: React.FC<{
   const lockedForCoins = !!item.cost && coins < item.cost;
   const price = shopItemPriceLabel(item);
   const lockReason = item.premium
-    ? 'Future premium'
+    ? 'Full Adventure'
     : lockedForStars
     ? `Needs ${item.starsRequired} stars`
     : lockedForCoins

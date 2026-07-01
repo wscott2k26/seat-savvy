@@ -1,6 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Backdrop } from './Modals';
 import { useGame } from './GameProvider';
+import {
+  getPremiumProductInfo,
+  isNativePurchasePlatform,
+  type PremiumPurchaseInfo,
+  type PremiumPurchaseResult,
+} from './premiumPurchase';
 
 export const SettingsModal: React.FC<{
   onClose: () => void;
@@ -269,43 +275,71 @@ export const SettingsModal: React.FC<{
 };
 
 export const PremiumModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [sms, setSms] = useState(true);
-  const [sent, setSent] = useState(false);
+  const { progress, purchasePremium, restorePremium, playSound } = useGame();
+  const [productInfo, setProductInfo] = useState<PremiumPurchaseInfo | null>(null);
+  const [premiumBusy, setPremiumBusy] = useState<'purchase' | 'restore' | null>(null);
+  const [premiumMessage, setPremiumMessage] = useState('');
 
-  const join = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-    try {
-      await fetch(
-        'https://famous.ai/api/crm/6a3d2fc295418d0cc27b2f7f/subscribe',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email,
-            phone: phone || undefined,
-            sms_opt_in: sms,
-            source: 'premium-waitlist',
-            tags: ['premium', 'expansions'],
-          }),
-        },
-      );
-    } catch {
-      setSent(true);
-      return;
-    }
-    setSent(true);
-  };
+  useEffect(() => {
+    let mounted = true;
+    void getPremiumProductInfo().then((info) => {
+      if (mounted) setProductInfo(info);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
-  const perks = [
+  const premiumPerks = [
     'More handcrafted story chapters',
     'Unlimited hints, forever',
     'Layered expert puzzles',
     'Exclusive characters & worlds',
-    'No ads · Cloud saves',
+    'Premium homes, pets, and cosmetics',
   ];
+
+  const handlePremiumResult = (result: PremiumPurchaseResult) => {
+    setPremiumMessage(result.message);
+    if (
+      result.status === 'purchased' ||
+      result.status === 'restored' ||
+      result.status === 'already-owned'
+    ) {
+      window.setTimeout(onClose, 900);
+    }
+  };
+
+  const buyPremium = async () => {
+    setPremiumBusy('purchase');
+    setPremiumMessage('');
+    try {
+      handlePremiumResult(await purchasePremium());
+    } finally {
+      setPremiumBusy(null);
+    }
+  };
+
+  const restorePurchase = async () => {
+    setPremiumBusy('restore');
+    setPremiumMessage('');
+    try {
+      handlePremiumResult(await restorePremium());
+    } finally {
+      setPremiumBusy(null);
+    }
+  };
+
+  const unlocked = progress.premium;
+  const priceLabel = unlocked
+    ? 'Active'
+    : productInfo?.priceLabel ?? 'App Store purchase';
+  const primaryLabel = unlocked
+    ? 'Continue'
+    : premiumBusy === 'purchase'
+      ? 'Opening Store...'
+      : productInfo?.nativeAvailable
+        ? `Purchase Full Adventure${productInfo?.priceLabel ? ` - ${productInfo.priceLabel}` : ''}`
+        : 'Unlock Full Adventure';
 
   return (
     <Backdrop>
@@ -313,82 +347,81 @@ export const PremiumModal: React.FC<{ onClose: () => void }> = ({ onClose }) => 
         Tiny Worlds Premium
       </p>
       <h2 className="font-display text-2xl font-extrabold text-[#fff5d8]">
-        Loved the free stories?
+        Full Adventure
       </h2>
       <p className="mt-2 text-sm font-semibold text-[#d9cda9]">
-        Unlock the full adventure for more cozy worlds, harder puzzles, and premium customization.
+        Unlock more cozy worlds, harder puzzles, and premium customization.
       </p>
       <ul className="mt-4 space-y-2">
-        {perks.map((p) => (
-          <li key={p} className="flex items-center gap-2 text-[15px] font-medium text-[#eadfcb]">
+        {premiumPerks.map((perk) => (
+          <li key={perk} className="flex items-center gap-2 text-[15px] font-medium text-[#eadfcb]">
             <span className="grid h-5 w-5 place-items-center rounded-full bg-[#d6a84f] text-[#15101f] shadow-[0_0_12px_rgba(214,168,79,0.28)]">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
             </span>
-            {p}
+            {perk}
           </li>
         ))}
       </ul>
       <div className="mt-5 rounded-2xl border border-[#d6a84f]/30 bg-[#d6a84f]/12 px-4 py-3 text-left shadow-[0_14px_34px_rgba(214,168,79,0.14)]">
-        <p className="text-sm font-black text-[#f6d98d]">
-          Full Adventure purchase coming soon
-        </p>
-        <p className="mt-1 text-xs font-semibold leading-relaxed text-[#d9cda9]">
-          Premium chapters are visible now, but real App Store unlocks will stay disabled until StoreKit purchases are configured.
-        </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-black text-[#f6d98d]">
+              {unlocked ? 'Full Adventure active' : productInfo?.title ?? 'Full Adventure'}
+            </p>
+            <p className="mt-1 text-xs font-semibold leading-relaxed text-[#d9cda9]">
+              {unlocked
+                ? 'Every premium chapter, unlimited hint, premium home, and exclusive reward is unlocked.'
+                : productInfo?.description ??
+                  'Unlock every premium chapter, unlimited hints, and exclusive rewards.'}
+            </p>
+          </div>
+          <span className="shrink-0 rounded-full bg-[#d6a84f] px-3 py-1 text-xs font-black text-[#15101f]">
+            {priceLabel}
+          </span>
+        </div>
       </div>
 
-      <div className="mt-5 rounded-3xl border border-white/10 bg-[#0d1930]/62 p-4 shadow-inner">
-        {sent ? (
-          <p className="text-center text-sm font-semibold text-[#b7d6c8]">
-            You’re on the list! We’ll let you know about Year One
-            expansions.
-          </p>
-        ) : (
-          <form onSubmit={join} className="space-y-2">
-            <p className="text-sm font-bold text-[#f4e6c8]">
-              Get notified about new worlds & the Season Pass
-            </p>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@email.com"
-              className="w-full rounded-xl border border-white/10 bg-[#050816]/70 px-3 py-2 text-sm text-[#fff5d8] outline-none placeholder:text-[#8c849d] focus:border-[#d6a84f]"
-            />
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Phone number (optional)"
-              className="w-full rounded-xl border border-white/10 bg-[#050816]/70 px-3 py-2 text-sm text-[#fff5d8] outline-none placeholder:text-[#8c849d] focus:border-[#d6a84f]"
-            />
-            <label className="flex items-start gap-2 text-[11px] text-[#a9a0b5]">
-              <input
-                type="checkbox"
-                checked={sms}
-                onChange={(e) => setSms(e.target.checked)}
-                className="mt-0.5"
-              />
-              Text me updates. Msg &amp; data rates may apply. Reply STOP to
-              unsubscribe.
-            </label>
-            <button
-              type="submit"
-              className="w-full rounded-xl bg-[#d6a84f] py-2 text-sm font-bold text-[#15101f] active:scale-95"
-            >
-              Join the waitlist
-            </button>
-          </form>
-        )}
-      </div>
+      {premiumMessage && (
+        <p className="mt-3 rounded-2xl border border-white/10 bg-white/8 px-4 py-3 text-sm font-bold text-[#d9cda9]">
+          {premiumMessage}
+        </p>
+      )}
+
+      <button
+        onClick={() => {
+          if (unlocked) {
+            playSound('button');
+            onClose();
+          } else {
+            void buyPremium();
+          }
+        }}
+        disabled={premiumBusy !== null}
+        className="mt-5 w-full rounded-2xl bg-gradient-to-r from-[#d6a84f] to-[#f0c76a] py-3 text-sm font-black text-[#15101f] shadow-[0_14px_30px_rgba(214,168,79,0.24)] transition active:scale-95 disabled:opacity-70"
+        type="button"
+      >
+        {primaryLabel}
+      </button>
+
+      {isNativePurchasePlatform() && !unlocked && (
+        <button
+          onClick={() => void restorePurchase()}
+          disabled={premiumBusy !== null}
+          className="mt-2 w-full rounded-2xl border border-[#d6a84f]/24 bg-[#d6a84f]/10 py-2.5 font-bold text-[#f6d98d] shadow ring-1 ring-black/5 transition hover:bg-[#d6a84f]/14 active:scale-95 disabled:opacity-70"
+          type="button"
+        >
+          {premiumBusy === 'restore' ? 'Checking Purchases...' : 'Restore Purchase'}
+        </button>
+      )}
 
       <button
         onClick={onClose}
         className="mt-3 w-full rounded-2xl border border-white/10 bg-white/10 py-2.5 font-bold text-[#d9cda9] shadow ring-1 ring-black/5 transition hover:bg-white/15 active:scale-95"
+        type="button"
       >
         Maybe later
       </button>
     </Backdrop>
   );
+
 };

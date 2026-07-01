@@ -183,7 +183,7 @@ export const HOME_UPGRADES: HomeUpgrade[] = [
   {
     id: 'luxury-penthouse',
     label: 'Luxury Penthouse',
-    description: 'A future premium home preview for later seasons.',
+    description: 'A skyline penthouse unlocked through the Full Adventure.',
     cost: 2600,
     premium: true,
     size: 'premium',
