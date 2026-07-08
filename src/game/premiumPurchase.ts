@@ -10,11 +10,13 @@ import type {
 type PurchaseModule = typeof import('capacitor-plugin-cdv-purchase');
 
 export const FULL_ADVENTURE_PRODUCT_ID =
-  import.meta.env.VITE_FULL_ADVENTURE_PRODUCT_ID?.trim() ||
-  'com.wscott2k26.seatsavvy.full_adventure';
+  import.meta.env.VITE_FULL_ADVENTURE_PRODUCT_ID?.trim() || 'full_adventure';
 
 const PURCHASE_VALIDATOR_URL =
   import.meta.env.VITE_PURCHASE_VALIDATOR_URL?.trim() || '';
+
+const FRIENDLY_STORE_UNAVAILABLE_MESSAGE =
+  'Purchases are temporarily unavailable. Please try again later.';
 
 const nativePurchasePlatforms = new Set(['ios', 'android']);
 const ownedListeners = new Set<() => void>();
@@ -82,7 +84,7 @@ export async function getPremiumProductInfo(): Promise<PremiumPurchaseInfo> {
       canPurchase: false,
       platform: nativePlatformName(),
       priceLabel: 'App Store purchase',
-      description: errorMessage(error),
+      description: friendlyStoreMessage(error),
     };
   }
 }
@@ -120,8 +122,7 @@ export async function purchaseFullAdventure(): Promise<PremiumPurchaseResult> {
         status: 'unavailable',
         source,
         productId: FULL_ADVENTURE_PRODUCT_ID,
-        message:
-          'The Full Adventure product was not found. Check the App Store Connect product ID before submitting.',
+        message: FRIENDLY_STORE_UNAVAILABLE_MESSAGE,
       };
     }
 
@@ -152,7 +153,7 @@ export async function purchaseFullAdventure(): Promise<PremiumPurchaseResult> {
       status: 'failed',
       source,
       productId: FULL_ADVENTURE_PRODUCT_ID,
-      message: errorMessage(error),
+      message: friendlyStoreMessage(error),
     };
   }
 }
@@ -197,7 +198,7 @@ export async function restoreFullAdventure(): Promise<PremiumPurchaseResult> {
       status: 'failed',
       source,
       productId: FULL_ADVENTURE_PRODUCT_ID,
-      message: errorMessage(error),
+      message: friendlyStoreMessage(error),
     };
   }
 }
@@ -258,7 +259,7 @@ async function initializeNativeStore(): Promise<NativeStoreState> {
     }, 'seatsavvy_full_adventure_ready');
 
   const errors = await store.initialize([
-    platform === module.Platform.APPLE_APPSTORE
+    Capacitor.getPlatform() === 'ios'
       ? { platform, options: { needAppReceipt: true } }
       : platform,
   ]);
@@ -399,7 +400,7 @@ function resultFromStoreError(
     status: 'failed',
     source,
     productId: FULL_ADVENTURE_PRODUCT_ID,
-    message: error.message || 'Purchase failed. Please try again.',
+    message: friendlyStoreMessage(error.message),
   };
 }
 
@@ -415,8 +416,24 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-function errorMessage(error: unknown): string {
-  if (error instanceof Error && error.message) return error.message;
-  if (typeof error === 'string') return error;
-  return 'Purchase is unavailable right now. Please try again.';
+function friendlyStoreMessage(error: unknown): string {
+  const rawMessage = typeof error === 'string'
+    ? error
+    : error instanceof Error
+      ? error.message
+      : '';
+
+  const lower = rawMessage.toLowerCase();
+  if (
+    lower.includes('product not found') ||
+    lower.includes('not found') ||
+    lower.includes('appstore') ||
+    lower.includes('app store') ||
+    lower.includes('#400') ||
+    lower.includes('400')
+  ) {
+    return FRIENDLY_STORE_UNAVAILABLE_MESSAGE;
+  }
+
+  return rawMessage || FRIENDLY_STORE_UNAVAILABLE_MESSAGE;
 }
