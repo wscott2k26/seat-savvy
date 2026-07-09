@@ -9,6 +9,7 @@ import {
   timeLimitSeconds,
   type PlayMode,
 } from './timing';
+import { cluewordForLevel, shareCardForLevel } from './dailyDrama';
 
 const Backdrop: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="safe-modal-padding fixed inset-0 z-[120] flex items-center justify-center bg-[#030712]/72 backdrop-blur-md">
@@ -25,6 +26,7 @@ export const StoryModal: React.FC<{
   const [mode, setMode] = React.useState<PlayMode>('relaxed');
   const goal = formatClock(timeGoalSeconds(level));
   const limit = formatClock(timeLimitSeconds(level));
+  const clueword = cluewordForLevel(level);
 
   return (
     <Backdrop>
@@ -45,6 +47,17 @@ export const StoryModal: React.FC<{
         <p className="text-[15px] leading-relaxed">{level.intro}</p>
         <p className="mt-3 text-xs font-semibold text-[#d6a84f]">
           &mdash; {level.hostName}
+        </p>
+      </div>
+      <div className="mt-3 rounded-3xl border border-[#d6a84f]/24 bg-[#d6a84f]/10 p-4 shadow-inner">
+        <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#d6a84f]">
+          Clueword Warm-Up
+        </p>
+        <p className="mt-1 text-sm font-bold text-[#fff5d8]">
+          “{clueword.clue}” = <span className="text-[#f6d98d]">{clueword.answer}</span>
+        </p>
+        <p className="mt-1 text-xs font-semibold leading-relaxed text-[#d9cda9]">
+          {clueword.rule}
         </p>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-2 rounded-3xl border border-white/10 bg-white/8 p-2 shadow-inner">
@@ -96,102 +109,133 @@ export const WinModal: React.FC<{
   stats: LevelStats;
   rewards?: CompletionRewards | null;
   achievements?: string[];
-}> = ({ level, onNext, onMenu, hasNext, stars, stats, rewards, achievements = [] }) => (
-  <Backdrop>
-    <div className="flex flex-col items-center text-center">
-      <div className="ts-celebrate rounded-full bg-[#f6d98d]/12 p-1 shadow-[0_0_34px_rgba(214,168,79,0.35)] ring-2 ring-[#d6a84f]/40">
-        <Avatar hue={120} size={72} mood="happy" />
-      </div>
-      <StarMeter stars={stars} />
-      <h2 className="mt-2 font-display text-2xl font-extrabold text-[#fff5d8]">
-        Puzzle Solved!
-      </h2>
-      <p className="mt-3 rounded-3xl border border-white/10 bg-[#0d1930]/72 p-4 text-[15px] leading-relaxed text-[#eadfcb] shadow-inner">
-        {level.outro}
-      </p>
-      <div className="mt-3 grid w-full grid-cols-3 gap-2 text-xs font-extrabold text-[#d9cda9]">
-        <RewardStat label="Score" value={scoreForWin(stars, stats, rewards)} />
-        <RewardStat label="Time" value={formatTime(rewards?.elapsedSeconds)} />
-        <RewardStat label="Mistakes" value={stats.mistakes} />
-        <RewardStat label="Hints" value={stats.hintsUsed} />
-        <RewardStat label="Stars" value={stars} />
-        <RewardStat label="Coins" value={`+${rewards?.coins ?? 50 + stars * 10}`} />
-        <RewardStat label="XP" value={`+${rewards?.xp ?? 100 + stars * 15}`} />
-      </div>
-      <p className="mt-2 text-[11px] font-bold text-[#a9a0b5]">
-        Faster, cleaner solves earn the biggest coin and XP bonuses.
-      </p>
-      <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-sm font-bold text-[#1a1326]">
-        <span className="rounded-full bg-[#d6a84f] px-3 py-1 shadow-[0_0_16px_rgba(214,168,79,0.25)]">
-          +{rewards?.coins ?? 50 + stars * 10} coins
-        </span>
-        <span className="rounded-full bg-[#b7d6c8] px-3 py-1">
-          +{rewards?.xp ?? 100 + stars * 15} XP
-        </span>
-        {(rewards?.hint ?? 1) > 0 && (
-          <span className="rounded-full bg-[#9fb6d9] px-3 py-1">
-            +{rewards?.hint ?? 1} hint
+}> = ({ level, onNext, onMenu, hasNext, stars, stats, rewards, achievements = [] }) => {
+  const shareText = shareCardForLevel(level, stars, stats, rewards);
+  const handleShare = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({ text: shareText });
+        return;
+      }
+      await navigator.clipboard?.writeText(shareText);
+      window.alert('SeatSavvy share card copied.');
+    } catch {
+      await navigator.clipboard?.writeText(shareText).catch(() => undefined);
+    }
+  };
+
+  return (
+    <Backdrop>
+      <div className="flex flex-col items-center text-center">
+        <div className="ts-celebrate rounded-full bg-[#f6d98d]/12 p-1 shadow-[0_0_34px_rgba(214,168,79,0.35)] ring-2 ring-[#d6a84f]/40">
+          <Avatar hue={120} size={72} mood="happy" seed={`win-${level.id}`} />
+        </div>
+        <StarMeter stars={stars} />
+        <h2 className="mt-2 font-display text-2xl font-extrabold text-[#fff5d8]">
+          Puzzle Solved!
+        </h2>
+        <p className="mt-3 rounded-3xl border border-white/10 bg-[#0d1930]/72 p-4 text-[15px] leading-relaxed text-[#eadfcb] shadow-inner">
+          {level.outro}
+        </p>
+        <div className="mt-3 grid w-full grid-cols-3 gap-2 text-xs font-extrabold text-[#d9cda9]">
+          <RewardStat label="Score" value={scoreForWin(stars, stats, rewards)} />
+          <RewardStat label="Time" value={formatTime(rewards?.elapsedSeconds)} />
+          <RewardStat label="Mistakes" value={stats.mistakes} />
+          <RewardStat label="Hints" value={stats.hintsUsed} />
+          <RewardStat label="Stars" value={stars} />
+          <RewardStat label="Coins" value={`+${rewards?.coins ?? 50 + stars * 10}`} />
+          <RewardStat label="XP" value={`+${rewards?.xp ?? 100 + stars * 15}`} />
+        </div>
+        <div className="mt-3 w-full rounded-3xl border border-[#d6a84f]/30 bg-[#050816]/58 p-3 text-left shadow-inner">
+          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#d6a84f]">
+            Share card
+          </p>
+          <pre className="mt-2 whitespace-pre-wrap rounded-2xl bg-black/24 p-3 text-xs font-bold leading-relaxed text-[#f8edd2]">
+            {shareText}
+          </pre>
+          <button
+            type="button"
+            onClick={handleShare}
+            className="mt-2 w-full rounded-2xl bg-[#d6a84f] py-2 text-sm font-black text-[#15101f] shadow-[0_10px_24px_rgba(214,168,79,0.22)] active:scale-95"
+          >
+            Share Daily Drama Card
+          </button>
+        </div>
+        <p className="mt-2 text-[11px] font-bold text-[#a9a0b5]">
+          Faster, cleaner solves earn the biggest coin and XP bonuses.
+        </p>
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-sm font-bold text-[#1a1326]">
+          <span className="rounded-full bg-[#d6a84f] px-3 py-1 shadow-[0_0_16px_rgba(214,168,79,0.25)]">
+            +{rewards?.coins ?? 50 + stars * 10} coins
           </span>
-        )}
-      </div>
-      {rewards?.bonuses && rewards.bonuses.length > 0 && (
-        <div className="mt-3 flex flex-wrap justify-center gap-2">
-          {rewards.bonuses.map((bonus) => (
-            <span
-              key={bonus}
-              className="rounded-full border border-[#d6a84f]/24 bg-[#d6a84f]/10 px-3 py-1 text-xs font-extrabold text-[#f6d98d]"
-            >
-              {bonus}
+          <span className="rounded-full bg-[#b7d6c8] px-3 py-1">
+            +{rewards?.xp ?? 100 + stars * 15} XP
+          </span>
+          {(rewards?.hint ?? 1) > 0 && (
+            <span className="rounded-full bg-[#9fb6d9] px-3 py-1">
+              +{rewards?.hint ?? 1} hint
             </span>
-          ))}
+          )}
         </div>
-      )}
-      {rewards?.levelUp && (
-        <div className="mt-3 w-full rounded-3xl border border-[#b7d6c8]/24 bg-[#b7d6c8]/12 px-4 py-3 text-left shadow-inner">
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-[#b7d6c8]">
-            Level up
-          </p>
-          <p className="mt-1 text-sm font-extrabold text-[#fff5d8]">
-            Player Level {rewards.levelUp.to} - {rewards.levelUp.reward}
-          </p>
-        </div>
-      )}
-      {achievements.length > 0 && (
-        <div className="mt-3 w-full rounded-3xl border border-[#d6a84f]/30 bg-[#d6a84f]/12 px-4 py-3 text-left shadow-inner">
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-[#d6a84f]">
-            Rewards unlocked
-          </p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {achievements.map((achievement) => (
+        {rewards?.bonuses && rewards.bonuses.length > 0 && (
+          <div className="mt-3 flex flex-wrap justify-center gap-2">
+            {rewards.bonuses.map((bonus) => (
               <span
-                key={achievement}
-                className="rounded-full bg-[#f7d889] px-3 py-1 text-xs font-extrabold text-[#181126]"
+                key={bonus}
+                className="rounded-full border border-[#d6a84f]/24 bg-[#d6a84f]/10 px-3 py-1 text-xs font-extrabold text-[#f6d98d]"
               >
-                {achievement}
+                {bonus}
               </span>
             ))}
           </div>
-        </div>
-      )}
-      <div className="mt-5 flex w-full gap-3">
-        <button
-          onClick={onMenu}
-          className="flex-1 rounded-2xl border border-white/10 bg-white/10 py-3 font-extrabold text-[#f8edd2] shadow ring-1 ring-black/5 transition hover:bg-white/15 active:scale-95"
-        >
-          Back
-        </button>
-        {hasNext && (
-          <button
-            onClick={onNext}
-            className="flex-[1.4] rounded-2xl bg-gradient-to-r from-[#d6a84f] to-[#f1cb78] py-3 font-extrabold text-[#15101f] shadow-[0_12px_28px_rgba(214,168,79,0.25)] transition hover:-translate-y-0.5 active:scale-95"
-          >
-            Next Level
-          </button>
         )}
+        {rewards?.levelUp && (
+          <div className="mt-3 w-full rounded-3xl border border-[#b7d6c8]/24 bg-[#b7d6c8]/12 px-4 py-3 text-left shadow-inner">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#b7d6c8]">
+              Level up
+            </p>
+            <p className="mt-1 text-sm font-extrabold text-[#fff5d8]">
+              Player Level {rewards.levelUp.to} - {rewards.levelUp.reward}
+            </p>
+          </div>
+        )}
+        {achievements.length > 0 && (
+          <div className="mt-3 w-full rounded-3xl border border-[#d6a84f]/30 bg-[#d6a84f]/12 px-4 py-3 text-left shadow-inner">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#d6a84f]">
+              Rewards unlocked
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {achievements.map((achievement) => (
+                <span
+                  key={achievement}
+                  className="rounded-full bg-[#f7d889] px-3 py-1 text-xs font-extrabold text-[#181126]"
+                >
+                  {achievement}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+        <div className="mt-5 flex w-full gap-3">
+          <button
+            onClick={onMenu}
+            className="flex-1 rounded-2xl border border-white/10 bg-white/10 py-3 font-extrabold text-[#f8edd2] shadow ring-1 ring-black/5 transition hover:bg-white/15 active:scale-95"
+          >
+            Back
+          </button>
+          {hasNext && (
+            <button
+              onClick={onNext}
+              className="flex-[1.4] rounded-2xl bg-gradient-to-r from-[#d6a84f] to-[#f1cb78] py-3 font-extrabold text-[#15101f] shadow-[0_12px_28px_rgba(214,168,79,0.25)] transition hover:-translate-y-0.5 active:scale-95"
+            >
+              Next Level
+            </button>
+          )}
+        </div>
       </div>
-    </div>
-  </Backdrop>
-);
+    </Backdrop>
+  );
+};
 
 export const TutorialModal: React.FC<{
   onClose: (dontShowAgain: boolean) => void;
