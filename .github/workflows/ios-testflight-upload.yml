@@ -1,11 +1,8 @@
 name: SeatSavvy TestFlight Upload
 
-# This workflow builds and uploads the SeatSavvy iOS IPA to App Store Connect.
+# Manual-only upload to avoid hitting App Store Connect daily upload limits while iterating.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - master
 
 jobs:
   testflight-upload:
