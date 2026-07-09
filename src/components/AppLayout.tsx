@@ -16,6 +16,50 @@ import { PremiumModal, SettingsModal } from '@/game/Panels';
 import { TutorialModal } from '@/game/Modals';
 import { todayKey } from '@/game/lifeData';
 import { AccountModal } from '@/game/AccountModal';
+import {
+  getCurrentCloudAccount,
+  subscribeToCloudAccount,
+  type CloudAccountProfile,
+} from '@/game/cloudAuth';
+
+const CloudAccountBridge: React.FC = () => {
+  const { setProgress } = useGame();
+
+  useEffect(() => {
+    const applyProfile = (profile: CloudAccountProfile | null) => {
+      if (!profile) return;
+      setProgress((p) => ({
+        ...p,
+        account: {
+          provider: profile.provider,
+          displayName: profile.displayName,
+          email: profile.email,
+          connectedAt: profile.connectedAt,
+          onboardingSeen: true,
+          shareWithFriends: p.account.shareWithFriends,
+        },
+      }));
+    };
+
+    let cancelled = false;
+    void getCurrentCloudAccount()
+      .then((profile) => {
+        if (!cancelled) applyProfile(profile);
+      })
+      .catch(() => undefined);
+
+    const unsubscribe = subscribeToCloudAccount((profile) => {
+      if (!cancelled) applyProfile(profile);
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [setProgress]);
+
+  return null;
+};
 
 const GameShell: React.FC = () => {
   const {
@@ -48,6 +92,7 @@ const GameShell: React.FC = () => {
 
   return (
     <DragLayer>
+      <CloudAccountBridge />
       <div className="relative h-[100dvh] w-full select-none md:h-[calc(100dvh-2rem)]">
         {screen === 'menu' ? (
           <LevelSelect
