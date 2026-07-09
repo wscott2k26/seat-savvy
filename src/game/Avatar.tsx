@@ -20,10 +20,11 @@ interface AvatarProps {
   accessory?: AccessoryId;
   avatarFrame?: AvatarFrameId;
   moodAnimation?: MoodAnimationId;
+  seed?: string;
 }
 
 // A charming, deterministic storybook avatar drawn in SVG.
-// Skin/hair derive from the character hue so each feels distinct.
+// Seeded variants make every puzzle guest feel like a different little person.
 const Avatar: React.FC<AvatarProps> = ({
   hue,
   mood = 'idle',
@@ -36,13 +37,18 @@ const Avatar: React.FC<AvatarProps> = ({
   accessory = 'none',
   avatarFrame = 'none',
   moodAnimation = 'none',
+  seed,
 }) => {
+  const seedHash = avatarHash(seed ?? `${hue}`);
+  const hairVariant = seedHash % 7;
+  const faceVariant = Math.floor(seedHash / 7) % 4;
   const hairCol = hairColor ?? `hsl(${hue}, 45%, 38%)`;
   const skinCol = skinTone ?? `hsl(${(hue + 20) % 360}, 55%, 82%)`;
   const cheek = `hsl(${(hue + 10) % 360}, 70%, 78%)`;
   const shirt = outfitColor ?? `hsl(${hue}, 60%, 55%)`;
   const frame = frameStyle(avatarFrame);
   const animationClass = animationClassFor(moodAnimation);
+  const face = faceStyle(faceVariant);
 
   const eyeY = mood === 'sad' ? 27 : 26;
   const mouthPath =
@@ -81,14 +87,14 @@ const Avatar: React.FC<AvatarProps> = ({
       <path d="M10 64 Q12 46 32 46 Q52 46 54 64 Z" fill={shirt} />
       <path d="M10 64 Q12 46 32 46 Q52 46 54 64 Z" fill="#000" opacity="0.06" />
       {/* hair back */}
-      <ellipse cx="32" cy="24" rx="20" ry="20" fill={hairCol} />
+      {hairBack(hairVariant, hairCol)}
       {/* face */}
-      <circle cx="32" cy="27" r="16" fill={skinCol} />
+      <ellipse cx="32" cy="27" rx={face.rx} ry={face.ry} fill={skinCol} />
+      {/* ears */}
+      <circle cx="16.6" cy="28" r="3.5" fill={skinCol} opacity="0.9" />
+      <circle cx="47.4" cy="28" r="3.5" fill={skinCol} opacity="0.9" />
       {/* hair top */}
-      <path
-        d="M16 24 Q18 8 32 8 Q46 8 48 24 Q42 16 32 16 Q22 16 16 24 Z"
-        fill={hairCol}
-      />
+      {hairTop(hairVariant, hairCol)}
       {accessory === 'hair-bow' && (
         <g>
           <path d="M24 13 L17 8 L18 20 Z" fill="#d86d8c" />
@@ -148,6 +154,12 @@ const Avatar: React.FC<AvatarProps> = ({
           <path d="M31 26 H33" />
         </g>
       )}
+      {seedHash % 9 === 0 && (
+        <g fill="#2c2230" opacity="0.75">
+          <circle cx="30" cy="31" r="0.9" />
+          <circle cx="35" cy="31" r="0.9" />
+        </g>
+      )}
       {/* mouth */}
       <path
         d={mouthPath}
@@ -156,6 +168,9 @@ const Avatar: React.FC<AvatarProps> = ({
         fill="none"
         strokeLinecap="round"
       />
+      {seedHash % 11 === 0 && (
+        <path d="M27 32 Q32 34 37 32" stroke={hairCol} strokeWidth="1.4" fill="none" strokeLinecap="round" opacity="0.8" />
+      )}
       {accessory === 'soft-scarf' && (
         <path
           d="M23 46 Q32 51 41 46 L42 52 Q32 57 22 52 Z"
@@ -174,6 +189,69 @@ const Avatar: React.FC<AvatarProps> = ({
     </svg>
   );
 };
+
+function hairBack(variant: number, color: string): React.ReactNode {
+  switch (variant) {
+    case 1:
+      return <path d="M15 26 Q15 8 32 7 Q49 8 49 27 Q47 46 39 48 Q44 34 39 21 Q30 15 20 24 Q18 34 24 48 Q16 44 15 26 Z" fill={color} />;
+    case 2:
+      return <path d="M13 30 Q14 9 32 7 Q50 9 51 30 Q51 47 43 55 Q43 38 40 22 Q31 16 21 22 Q20 38 21 55 Q13 47 13 30 Z" fill={color} />;
+    case 3:
+      return <ellipse cx="32" cy="28" rx="22" ry="18" fill={color} />;
+    case 4:
+      return <path d="M16 30 Q13 13 25 8 Q34 3 44 12 Q52 20 47 36 Q45 44 39 49 Q41 31 36 20 Q27 16 20 25 Q20 39 25 49 Q18 45 16 30 Z" fill={color} />;
+    case 5:
+      return <path d="M14 27 Q18 8 32 8 Q46 8 50 27 Q50 43 42 50 Q43 36 40 24 Q32 18 24 24 Q21 36 22 50 Q14 43 14 27 Z" fill={color} />;
+    case 6:
+      return <path d="M12 28 Q14 6 32 6 Q50 6 52 28 Q48 18 41 17 Q34 16 31 11 Q27 17 20 18 Q15 19 12 28 Z" fill={color} />;
+    case 0:
+    default:
+      return <ellipse cx="32" cy="24" rx="20" ry="20" fill={color} />;
+  }
+}
+
+function hairTop(variant: number, color: string): React.ReactNode {
+  switch (variant) {
+    case 1:
+      return <path d="M17 24 Q20 10 32 9 Q45 10 48 24 Q39 18 31 18 Q23 18 17 24 Z" fill={color} />;
+    case 2:
+      return <path d="M16 22 Q19 8 32 8 Q45 8 48 22 Q42 18 37 17 Q33 15 30 10 Q28 16 22 18 Q19 19 16 22 Z" fill={color} />;
+    case 3:
+      return <path d="M14 24 Q18 7 33 8 Q45 9 50 24 Q39 15 29 16 Q22 17 14 24 Z" fill={color} />;
+    case 4:
+      return <path d="M17 23 Q20 9 32 8 Q44 8 47 23 Q37 20 32 14 Q28 21 17 23 Z" fill={color} />;
+    case 5:
+      return <path d="M15 25 Q18 9 32 8 Q46 9 49 25 Q43 18 37 17 Q33 15 30 11 Q25 18 15 25 Z" fill={color} />;
+    case 6:
+      return <path d="M16 23 Q18 8 32 8 Q46 8 48 23 Q41 19 35 19 Q32 14 29 19 Q23 19 16 23 Z" fill={color} />;
+    case 0:
+    default:
+      return <path d="M16 24 Q18 8 32 8 Q46 8 48 24 Q42 16 32 16 Q22 16 16 24 Z" fill={color} />;
+  }
+}
+
+function faceStyle(variant: number): { rx: number; ry: number } {
+  switch (variant) {
+    case 1:
+      return { rx: 14.6, ry: 17.2 };
+    case 2:
+      return { rx: 17.2, ry: 15.3 };
+    case 3:
+      return { rx: 15.4, ry: 15.8 };
+    case 0:
+    default:
+      return { rx: 16, ry: 16 };
+  }
+}
+
+function avatarHash(value: string): number {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = Math.imul(31, hash) + value.charCodeAt(index);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
 
 function frameStyle(frame: AvatarFrameId):
   | { fill: string; stroke: string; width: number; dash?: string }
