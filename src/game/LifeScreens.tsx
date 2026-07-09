@@ -19,14 +19,18 @@ import {
 
 const categories: ShopCategory[] = [
   'furniture',
+  'kitchen',
+  'bathroom',
+  'outdoor',
+  'lighting',
   'decor',
   'pets',
-  'outfits',
-  'hats',
-  'accessories',
   'views',
   'wallpapers',
   'floors',
+  'outfits',
+  'hats',
+  'accessories',
   'music',
   'victory',
   'trails',
@@ -69,13 +73,14 @@ export const ShopScreen: React.FC = () => {
   const [category, setCategory] = useState<ShopCategory>('furniture');
   const stars = totalStars(progress.stars);
   const items = SHOP_ITEMS.filter((item) => item.category === category);
+  const ownedCount = progress.life.ownedItems.length;
 
   return (
     <div className="safe-screen relative h-full w-full overflow-y-auto bg-[linear-gradient(180deg,#050816_0%,#11172b_48%,#271733_100%)] text-[#f8edd2]">
       <ScreenHeader
         kicker="Design Store"
         title="Shop"
-        text="Spend puzzle coins on mature home pieces, polished cosmetics, companions, and future local music packs."
+        text="Buy furniture, outdoor pieces, kitchen upgrades, bathroom details, pets, lighting, and premium flex items for every home tier."
         action={
           <div className="rounded-full bg-[#d6a84f]/16 px-4 py-2 text-sm font-black text-[#f6d98d] ring-1 ring-[#d6a84f]/24">
             {progress.coins} coins
@@ -102,7 +107,18 @@ export const ShopScreen: React.FC = () => {
         </section>
 
         <section className={panelClass}>
-          <div className="flex gap-2 overflow-x-auto pb-2">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="font-display text-xl font-black text-[#fff5d8]">Home Catalog</h2>
+              <p className="text-xs font-semibold text-[#a9a0b5]">
+                {SHOP_ITEMS.length} items available. {ownedCount} already owned.
+              </p>
+            </div>
+            <span className="rounded-full border border-[#d6a84f]/24 bg-[#d6a84f]/12 px-3 py-1 text-xs font-black text-[#f6d98d]">
+              {stars} stars
+            </span>
+          </div>
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -159,7 +175,7 @@ const ShopCard: React.FC<{
   return (
     <button
       onClick={owned ? undefined : onBuy}
-      className={`min-h-[180px] overflow-hidden rounded-[26px] border text-left shadow-[0_18px_34px_rgba(0,0,0,0.36)] transition hover:-translate-y-0.5 active:scale-[0.98] ${
+      className={`min-h-[190px] overflow-hidden rounded-[26px] border text-left shadow-[0_18px_34px_rgba(0,0,0,0.36)] transition hover:-translate-y-0.5 active:scale-[0.98] ${
         owned
           ? 'border-[#d6a84f]/50 bg-[#d6a84f]/14'
           : canBuy
@@ -169,7 +185,7 @@ const ShopCard: React.FC<{
       type="button"
     >
       <div className="h-20 overflow-hidden border-b border-white/10 bg-[linear-gradient(135deg,#101827,#2b2038)]">
-        <ShopThumbnail item={item} />
+        <ShopItemPreview item={item} />
       </div>
       <div className="p-3">
         <div className="flex items-start justify-between gap-2">
@@ -211,8 +227,7 @@ const ShopCard: React.FC<{
 export const MissionsScreen: React.FC = () => {
   const { claimDailyReward, claimMission, progress } = useGame();
   const reward = dailyRewardForDate(progress.life.daily.date);
-  const claimedDaily =
-    progress.life.daily.claimedDailyDate === progress.life.daily.date;
+  const claimedDaily = progress.life.daily.claimedDailyDate === progress.life.daily.date;
   const level = playerLevelForXp(progress.xp);
   const xp = xpIntoLevel(progress.xp);
 
@@ -235,7 +250,7 @@ export const MissionsScreen: React.FC = () => {
               <div>
                 <h2 className="font-display text-xl font-black text-[#fff5d8]">Daily Reward</h2>
                 <p className="text-xs font-semibold text-[#a9a0b5]">
-                  Today&apos;s gift: <span className="text-[#f6d98d]">{reward.label}</span>
+                  Today&apos;s gift: <span className="text-[#f6d98d]">{reward.label}</span>.
                 </p>
               </div>
               <button
@@ -377,45 +392,40 @@ export const DailyRewardModal: React.FC<{ onClose: () => void }> = ({
 }) => {
   const { claimDailyReward, progress } = useGame();
   const reward = dailyRewardForDate(progress.life.daily.date);
-  const claimed =
-    progress.life.daily.claimedDailyDate === progress.life.daily.date;
+  const claimed = progress.life.daily.claimedDailyDate === progress.life.daily.date;
 
   return (
     <div className="safe-modal-padding fixed inset-0 z-[130] flex items-center justify-center bg-[#030712]/72 backdrop-blur-md">
       <div className="ts-pop w-full max-w-sm overflow-hidden rounded-[32px] border border-[#d6a84f]/30 bg-[linear-gradient(160deg,#081124,#21162f_58%,#0c2238)] text-center text-[#f8edd2] shadow-[0_32px_80px_rgba(0,0,0,0.62),0_0_34px_rgba(214,168,79,0.13)]">
         <div className="h-20 bg-[radial-gradient(circle_at_50%_0%,rgba(214,168,79,0.42),transparent_58%),linear-gradient(90deg,rgba(214,168,79,0.18),rgba(255,255,255,0.04),rgba(168,106,120,0.18))]" />
         <div className="-mt-9 px-5 pb-5">
-        <div className="mx-auto grid h-16 w-16 place-items-center rounded-[24px] bg-[#d6a84f]/18 text-[#f6d98d] shadow-[0_0_24px_rgba(214,168,79,0.24)] ring-1 ring-[#d6a84f]/30 backdrop-blur">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M20 12v8H4v-8" /><path d="M2 7h20v5H2z" /><path d="M12 22V7" /><path d="M12 7H7.5a2.5 2.5 0 1 1 2.1-3.8C10.5 4.6 12 7 12 7z" /><path d="M12 7h4.5a2.5 2.5 0 1 0-2.1-3.8C13.5 4.6 12 7 12 7z" /></svg>
-        </div>
-        <p className="mt-4 text-xs font-black uppercase tracking-[0.18em] text-[#d6a84f]">
-          Daily Reward
-        </p>
-        <h2 className="font-display text-2xl font-black text-[#fff5d8]">
-          Welcome Back
-        </h2>
-        <p className="mt-2 text-sm font-semibold text-[#d9cda9]">
-          Today&apos;s cozy gift is <span className="text-[#f6d98d]">{reward.label}</span>.
-        </p>
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          <button
-            onClick={onClose}
-            className="rounded-2xl border border-white/10 bg-white/10 py-3 text-sm font-black text-[#eadfcb] active:scale-95"
-            type="button"
-          >
-            Later
-          </button>
-          <button
-            onClick={() => {
-              if (!claimed) claimDailyReward();
-              onClose();
-            }}
-            className="rounded-2xl bg-gradient-to-r from-[#d6a84f] to-[#f0c76a] py-3 text-sm font-black text-[#15101f] shadow-[0_12px_24px_rgba(214,168,79,0.24)] active:scale-95"
-            type="button"
-          >
-            {claimed ? 'Claimed' : 'Claim'}
-          </button>
-        </div>
+          <div className="mx-auto grid h-16 w-16 place-items-center rounded-[24px] bg-[#d6a84f]/18 text-[#f6d98d] shadow-[0_0_24px_rgba(214,168,79,0.24)] ring-1 ring-[#d6a84f]/30 backdrop-blur">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M20 12v8H4v-8" /><path d="M2 7h20v5H2z" /><path d="M12 22V7" /><path d="M12 7H7.5a2.5 2.5 0 1 1 2.1-3.8C10.5 4.6 12 7 12 7z" /><path d="M12 7h4.5a2.5 2.5 0 1 0-2.1-3.8C13.5 4.6 12 7 12 7z" /></svg>
+          </div>
+          <p className="mt-4 text-xs font-black uppercase tracking-[0.18em] text-[#d6a84f]">Daily Reward</p>
+          <h2 className="font-display text-2xl font-black text-[#fff5d8]">Welcome Back</h2>
+          <p className="mt-2 text-sm font-semibold text-[#d9cda9]">
+            Today&apos;s cozy gift is <span className="text-[#f6d98d]">{reward.label}</span>.
+          </p>
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <button
+              onClick={onClose}
+              className="rounded-2xl border border-white/10 bg-white/10 py-3 text-sm font-black text-[#eadfcb] active:scale-95"
+              type="button"
+            >
+              Later
+            </button>
+            <button
+              onClick={() => {
+                if (!claimed) claimDailyReward();
+                onClose();
+              }}
+              className="rounded-2xl bg-gradient-to-r from-[#d6a84f] to-[#f0c76a] py-3 text-sm font-black text-[#15101f] shadow-[0_12px_24px_rgba(214,168,79,0.24)] active:scale-95"
+              type="button"
+            >
+              {claimed ? 'Claimed' : 'Claim'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -443,7 +453,3 @@ export const LifeNoticeModal: React.FC = () => {
     </div>
   );
 };
-
-const ShopThumbnail: React.FC<{ item: ShopItem }> = ({ item }) => (
-  <ShopItemPreview item={item} />
-);
