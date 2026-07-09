@@ -11,6 +11,7 @@ import {
 } from './lifeData';
 import { locationFor } from './locations';
 import type { Level } from './types';
+import { pickDailyDramaLevel } from './dailyDrama';
 
 const chapterFor = (level: Level) => {
   if (level.characters.length >= 24) return 'Expert Premium - 24 Seat Rooms';
@@ -64,6 +65,8 @@ const LevelSelect: React.FC<{
     GAME_THEME_BACKGROUNDS['midnight-gold'];
   const showPremiumNudge =
     !progress.premium && completedCount >= Math.max(0, freeLevels - 5);
+  const dailyDrama = pickDailyDramaLevel(levels, completedCount, freeLevels);
+  const dailyMeta = locationFor(dailyDrama.level.env);
   const grouped = levels.reduce<Record<string, typeof levels>>((acc, level) => {
     const chapter = chapterFor(level);
     acc[chapter] = acc[chapter] ?? [];
@@ -161,6 +164,7 @@ const LevelSelect: React.FC<{
 
         <div className="relative mt-4 grid grid-cols-3 gap-2">
           <MenuTile active label="Play" sublabel="Story" onClick={() => undefined} />
+          <MenuTile featured label="Daily" sublabel="Drama" onClick={() => startLevel(dailyDrama.level.id)} />
           <MenuTile featured label="Home" sublabel="Decorate" onClick={onHome} />
           <MenuTile label="Shop" sublabel="Coins" onClick={onShop} />
           <MenuTile label="Customize" sublabel="Avatar" onClick={onCustomize} />
@@ -172,6 +176,41 @@ const LevelSelect: React.FC<{
       </div>
 
       <div className="safe-content relative pt-5">
+        <button
+          type="button"
+          onClick={() => startLevel(dailyDrama.level.id)}
+          className="mb-5 w-full overflow-hidden rounded-[30px] border border-[#d6a84f]/35 p-4 text-left shadow-[0_20px_48px_rgba(0,0,0,0.38)] ring-1 ring-white/10 transition hover:-translate-y-0.5 active:scale-[0.99]"
+          style={{ background: `linear-gradient(145deg, ${dailyMeta.from}, ${dailyMeta.to})` }}
+        >
+          <div className="relative">
+            <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full opacity-35 blur-2xl" style={{ background: dailyMeta.glow }} />
+            <div className="relative flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#f6d98d]">
+                  Daily Seat Drama #{dailyDrama.dayNumber}
+                </p>
+                <h2 className="mt-1 font-display text-2xl font-black leading-tight text-[#fff5d8]">
+                  {dailyDrama.title}
+                </h2>
+              </div>
+              <span className="rounded-full bg-[#d6a84f] px-3 py-1 text-[10px] font-black uppercase tracking-wide text-[#15101f] shadow-[0_0_18px_rgba(214,168,79,0.3)]">
+                Viral
+              </span>
+            </div>
+            <p className="relative mt-2 text-sm font-semibold text-[#eadfcb]">
+              {dailyDrama.tagline}
+            </p>
+            <div className="relative mt-3 grid grid-cols-3 gap-2 text-center text-[10px] font-black uppercase tracking-wide text-[#d9cda9]">
+              <span className="rounded-2xl border border-white/10 bg-black/22 px-2 py-2">{dailyMeta.label}</span>
+              <span className="rounded-2xl border border-white/10 bg-black/22 px-2 py-2">{dailyDrama.level.characters.length} guests</span>
+              <span className="rounded-2xl border border-white/10 bg-black/22 px-2 py-2">{dailyDrama.dramaLevel}</span>
+            </div>
+            <p className="relative mt-3 text-xs font-bold text-[#fff5d8]">
+              Solve it, then share your drama card without spoiling the answer.
+            </p>
+          </div>
+        </button>
+
         <div className="mb-3 flex items-center justify-between">
           <div>
             <h2 className="font-display text-xl font-extrabold text-[#fff5d8]">Story Mode</h2>
