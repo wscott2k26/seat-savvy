@@ -1,5 +1,6 @@
 name: SeatSavvy TestFlight Upload
 
+# This workflow builds and uploads the SeatSavvy iOS IPA to App Store Connect.
 on:
   workflow_dispatch:
   push:
