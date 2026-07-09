@@ -4,8 +4,8 @@ import Avatar from './Avatar';
 import ClueIcon from './ClueIcon';
 import { clueIcon, clueText } from './constraints';
 import { useDrag } from './DragLayer';
-import { useGame } from './GameProvider';
 import { sceneForLocation, type SceneFamily } from './locations';
+import { characterLook } from './characterLooks';
 
 interface Props {
   seat: SeatType;
@@ -28,9 +28,9 @@ const seatTint: Record<SceneFamily, string> = {
 
 const Seat: React.FC<Props> = ({ seat, env, occupant, violated, nameOf }) => {
   const { startDrag } = useDrag();
-  const { progress } = useGame();
   const tint = seatTint[sceneForLocation(env)];
   const occupantName = occupant ? nameOf(occupant.id) : '';
+  const look = occupant ? characterLook(occupant.id, occupant.hue) : null;
 
   return (
     <div
@@ -51,7 +51,7 @@ const Seat: React.FC<Props> = ({ seat, env, occupant, violated, nameOf }) => {
               ))}
             </div>
           )}
-          {occupant && (
+          {occupant && look && (
             <button
               type="button"
               onPointerDown={(e) => startDrag({ charId: occupant.id, hue: occupant.hue }, e)}
@@ -63,7 +63,7 @@ const Seat: React.FC<Props> = ({ seat, env, occupant, violated, nameOf }) => {
                   hue={occupant.hue}
                   size={52}
                   mood={violated ? 'sad' : 'happy'}
-                  {...progress.customization.characterAvatar}
+                  {...look}
                 />
               </div>
             </button>
