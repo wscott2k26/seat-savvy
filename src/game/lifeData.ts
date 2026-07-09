@@ -4,6 +4,10 @@ export type ShopCategory =
   | 'accessories'
   | 'pets'
   | 'furniture'
+  | 'kitchen'
+  | 'bathroom'
+  | 'outdoor'
+  | 'lighting'
   | 'decor'
   | 'wallpapers'
   | 'floors'
@@ -106,8 +110,12 @@ export const SHOP_CATEGORY_LABELS: Record<ShopCategory, string> = {
   hats: 'Hats',
   accessories: 'Accessories',
   pets: 'Pets',
-  furniture: 'Room Furniture',
-  decor: 'Room Decorations',
+  furniture: 'Living Room',
+  kitchen: 'Kitchen',
+  bathroom: 'Bathroom',
+  outdoor: 'Outdoor',
+  lighting: 'Lighting',
+  decor: 'Room Decor',
   wallpapers: 'Wallpapers',
   floors: 'Floors',
   views: 'Window Views',
@@ -120,14 +128,14 @@ export const HOME_UPGRADES: HomeUpgrade[] = [
   {
     id: 'tiny-studio',
     label: 'Tiny Studio',
-    description: 'A small rainy room with enough space to start dreaming.',
+    description: 'One humble starter room with a rainy window and just enough space to dream.',
     cost: 0,
     size: 'tiny',
   },
   {
     id: 'small-trailer',
-    label: 'Small Trailer',
-    description: 'Compact, charming, and ready for road-trip memories.',
+    label: 'Cozy Trailer',
+    description: 'A cute road-home with an awning, kitchenette, booth seat, and warmer character.',
     cost: 240,
     starsRequired: 6,
     size: 'small',
@@ -135,56 +143,80 @@ export const HOME_UPGRADES: HomeUpgrade[] = [
   {
     id: 'starter-apartment',
     label: 'Starter Apartment',
-    description: 'A warmer apartment with better light and a little more room.',
+    description: 'A brighter two-zone apartment with a real bedroom corner and tiny kitchen wall.',
     cost: 420,
     starsRequired: 12,
     size: 'small',
   },
   {
-    id: 'city-apartment',
-    label: 'City Apartment',
-    description: 'Storm-blue skyline views and room for a proper reading nook.',
-    cost: 680,
+    id: 'suburban-house',
+    label: 'Suburban House',
+    description: 'A proper house glow-up with yard space, living room, bedroom, and kitchen nook.',
+    cost: 760,
     starsRequired: 24,
     size: 'medium',
   },
   {
+    id: 'city-apartment',
+    label: 'City Apartment',
+    description: 'Storm-blue skyline views, cleaner furniture zones, and room for a reading nook.',
+    cost: 920,
+    starsRequired: 32,
+    size: 'medium',
+  },
+  {
     id: 'cozy-cabin',
-    label: 'Cozy Cabin',
-    description: 'Wood beams, soft lamps, and a mountain-rain window.',
-    cost: 900,
-    starsRequired: 36,
+    label: 'Forest Cabin',
+    description: 'Wood beams, fireplace bones, mountain-rain windows, and a cozy lodge layout.',
+    cost: 1180,
+    starsRequired: 44,
     size: 'medium',
   },
   {
     id: 'beach-cottage',
     label: 'Beach Cottage',
-    description: 'A breezy cottage with ocean air and sleepy gold light.',
-    cost: 1180,
-    starsRequired: 48,
-    size: 'large',
-  },
-  {
-    id: 'city-loft',
-    label: 'City Loft',
-    description: 'High ceilings, big windows, and a midnight city glow.',
-    cost: 1420,
-    starsRequired: 60,
+    description: 'A breezy cottage with porch energy, ocean air, and soft sandy rooms.',
+    cost: 1460,
+    starsRequired: 56,
     size: 'large',
   },
   {
     id: 'lake-house',
     label: 'Lake House',
-    description: 'Quiet water, warm wood, and a porch full of stars.',
-    cost: 1680,
-    starsRequired: 72,
+    description: 'Quiet water, warm wood, a deck outside, and wide windows inside.',
+    cost: 1780,
+    starsRequired: 68,
+    size: 'large',
+  },
+  {
+    id: 'city-loft',
+    label: 'City Loft',
+    description: 'High ceilings, big windows, workstation space, and a midnight city glow.',
+    cost: 2120,
+    starsRequired: 82,
+    size: 'large',
+  },
+  {
+    id: 'garden-villa',
+    label: 'Garden Villa',
+    description: 'A peaceful premium-style villa with greenhouse windows and outdoor garden space.',
+    cost: 2480,
+    starsRequired: 96,
     size: 'large',
   },
   {
     id: 'luxury-penthouse',
     label: 'Luxury Penthouse',
-    description: 'A skyline penthouse unlocked through the Full Adventure.',
-    cost: 2600,
+    description: 'Full Adventure skyline luxury with gold accents, balcony vibes, and trophy space.',
+    cost: 3000,
+    premium: true,
+    size: 'premium',
+  },
+  {
+    id: 'dream-estate',
+    label: 'Dream Estate',
+    description: 'The biggest Full Adventure home: driveway, pool deck, grand room, and flex energy.',
+    cost: 4200,
     premium: true,
     size: 'premium',
   },
@@ -202,6 +234,7 @@ export const SHOP_ITEMS: ShopItem[] = [
   { id: 'plum-outfit', label: 'Plum Coat', description: 'A richer puzzle-night outfit.', category: 'outfits', kind: 'cosmetic', cost: 120, preview: 'coat' },
   { id: 'raincoat-outfit', label: 'Raincoat', description: 'Stormy and practical.', category: 'outfits', kind: 'cosmetic', cost: 220, preview: 'rain' },
   { id: 'gold-outfit', label: 'Gold Cardigan', description: 'A warm premium-looking knit.', category: 'outfits', kind: 'cosmetic', starsRequired: 18, preview: 'gold' },
+  { id: 'velvet-fit', label: 'Velvet Fit', description: 'Premium cozy night-out drip.', category: 'outfits', kind: 'cosmetic', cost: 780, premium: true, preview: 'coat' },
 
   { id: 'beanie-hat', label: 'Cozy Beanie', description: 'Soft, simple, and warm.', category: 'hats', kind: 'cosmetic', cost: 90, preview: 'hat' },
   { id: 'beret-hat', label: 'Story Beret', description: 'For thoughtful cafe days.', category: 'hats', kind: 'cosmetic', cost: 180, preview: 'beret' },
@@ -215,29 +248,60 @@ export const SHOP_ITEMS: ShopItem[] = [
   { id: 'hamster-pet', label: 'Hamster', description: 'A round little desk buddy.', category: 'pets', kind: 'pet', cost: 220, preview: 'ham' },
   { id: 'duck-pet', label: 'Rain Duck', description: 'Waddles best in wet weather.', category: 'pets', kind: 'pet', starsRequired: 24, preview: 'duck' },
   { id: 'robot-pet', label: 'Robot Pet', description: 'Beeps softly when puzzles go well.', category: 'pets', kind: 'pet', cost: 520, preview: 'bot' },
-  { id: 'fox-pet', label: 'Fox Friend', description: 'Premium placeholder pet.', category: 'pets', kind: 'pet', cost: 900, premium: true, preview: 'fox' },
-  { id: 'dragon-pet', label: 'Baby Dragon', description: 'Premium placeholder pet.', category: 'pets', kind: 'pet', cost: 1500, premium: true, preview: 'dragon' },
+  { id: 'fox-pet', label: 'Fox Friend', description: 'Premium fox friend for big homes.', category: 'pets', kind: 'pet', cost: 900, premium: true, preview: 'fox' },
+  { id: 'dragon-pet', label: 'Baby Dragon', description: 'Premium baby dragon with tiny boss energy.', category: 'pets', kind: 'pet', cost: 1500, premium: true, preview: 'dragon' },
 
   { id: 'cozy-bed', label: 'Cozy Bed', description: 'A proper place to rest.', category: 'furniture', kind: 'furniture', cost: 240, preview: 'bed' },
   { id: 'bookshelf', label: 'Bookshelf', description: 'Story fuel for the walls.', category: 'furniture', kind: 'furniture', cost: 280, preview: 'books' },
   { id: 'tiny-tv', label: 'Tiny TV', description: 'Movie-night energy.', category: 'furniture', kind: 'furniture', cost: 320, preview: 'tv' },
   { id: 'gaming-chair', label: 'Gaming Chair', description: 'A bold chair for clever solvers.', category: 'furniture', kind: 'furniture', cost: 360, preview: 'chair' },
   { id: 'desk-setup', label: 'Desk Setup', description: 'Focused, tidy, and warm.', category: 'furniture', kind: 'furniture', cost: 420, preview: 'desk' },
-  { id: 'coffee-maker', label: 'Coffee Maker', description: 'Cafe comfort at home.', category: 'furniture', kind: 'furniture', cost: 260, preview: 'coffee' },
+  { id: 'sectional-sofa', label: 'Sectional Sofa', description: 'A bigger couch for bigger homes.', category: 'furniture', kind: 'furniture', cost: 640, starsRequired: 18, preview: 'couch' },
+  { id: 'luxury-bed', label: 'Luxury Bed Set', description: 'Premium bedroom glow-up with hotel energy.', category: 'furniture', kind: 'furniture', cost: 980, premium: true, preview: 'bed' },
+  { id: 'reading-chair', label: 'Reading Chair', description: 'A soft corner chair for quiet victories.', category: 'furniture', kind: 'furniture', cost: 380, preview: 'chair' },
+  { id: 'trophy-shelf', label: 'Trophy Shelf', description: 'Show off puzzle wins and home progress.', category: 'furniture', kind: 'furniture', cost: 720, starsRequired: 50, preview: 'books' },
+
+  { id: 'coffee-maker', label: 'Coffee Maker', description: 'Cafe comfort at home.', category: 'kitchen', kind: 'furniture', cost: 260, preview: 'coffee' },
+  { id: 'kitchen-island', label: 'Kitchen Island', description: 'A grown-up kitchen centerpiece.', category: 'kitchen', kind: 'furniture', cost: 720, starsRequired: 28, preview: 'table' },
+  { id: 'fruit-bowl', label: 'Fruit Bowl', description: 'A bright little counter detail.', category: 'kitchen', kind: 'decor', cost: 150, preview: 'plant' },
+  { id: 'gold-fridge', label: 'Gold Fridge Skin', description: 'Ridiculous? Yes. Clean? Also yes.', category: 'kitchen', kind: 'decor', cost: 560, premium: true, preview: 'gold' },
+  { id: 'diner-booth', label: 'Diner Booth', description: 'Perfect for trailer and cottage breakfast scenes.', category: 'kitchen', kind: 'furniture', cost: 460, preview: 'couch' },
+
+  { id: 'bath-mat', label: 'Bath Mat', description: 'Soft steps after a long puzzle day.', category: 'bathroom', kind: 'decor', cost: 170, preview: 'rug' },
+  { id: 'round-mirror', label: 'Round Mirror', description: 'A clean bathroom wall accent.', category: 'bathroom', kind: 'decor', cost: 220, preview: 'art' },
+  { id: 'towel-rack', label: 'Towel Rack', description: 'Tiny detail, big upgrade energy.', category: 'bathroom', kind: 'decor', cost: 260, preview: 'table' },
+  { id: 'spa-candles', label: 'Spa Candles', description: 'Calm luxury for the big homes.', category: 'bathroom', kind: 'decor', cost: 420, starsRequired: 32, preview: 'neon' },
 
   { id: 'wall-art', label: 'Wall Art', description: 'A small framed memory.', category: 'decor', kind: 'decor', cost: 140, preview: 'art' },
   { id: 'aquarium', label: 'Aquarium', description: 'Soft bubbles for calm rooms.', category: 'decor', kind: 'decor', cost: 460, preview: 'fish' },
-  { id: 'fireplace', label: 'Fireplace', description: 'A warm glow for earned homes.', category: 'decor', kind: 'decor', starsRequired: 36, preview: 'fire' },
+  { id: 'fireplace', label: 'Fireplace', description: 'A warm glow for earned homes.', category: 'lighting', kind: 'decor', starsRequired: 36, preview: 'fire' },
   { id: 'cozy-rug', label: 'Cozy Rug', description: 'Pulls the whole room together.', category: 'decor', kind: 'decor', cost: 190, preview: 'rug' },
   { id: 'pet-bed', label: 'Pet Bed', description: 'A soft spot for your companion.', category: 'decor', kind: 'decor', cost: 160, preview: 'petbed' },
-  { id: 'neon-sign', label: 'Neon Sign', description: 'A gentle glow, not too loud.', category: 'decor', kind: 'decor', cost: 380, preview: 'neon' },
+  { id: 'neon-sign', label: 'Neon Sign', description: 'A gentle glow, not too loud.', category: 'lighting', kind: 'decor', cost: 380, preview: 'neon' },
+  { id: 'floor-lamp-upgrade', label: 'Tall Floor Lamp', description: 'Warmer lighting for bigger rooms.', category: 'lighting', kind: 'decor', cost: 300, preview: 'neon' },
+  { id: 'string-lights', label: 'String Lights', description: 'Soft lights that make any room post-worthy.', category: 'lighting', kind: 'decor', cost: 340, preview: 'spark' },
+  { id: 'piano', label: 'Tiny Piano', description: 'For dramatic evenings after perfect solves.', category: 'decor', kind: 'furniture', cost: 880, starsRequired: 64, preview: 'desk' },
+  { id: 'jukebox', label: 'Jukebox', description: 'A retro flex for the fun homes.', category: 'decor', kind: 'furniture', cost: 760, preview: 'music' },
+  { id: 'telescope', label: 'Telescope', description: 'Watch the skyline, lake, or moon.', category: 'decor', kind: 'decor', cost: 680, starsRequired: 48, preview: 'moon' },
+
+  { id: 'porch-chair', label: 'Porch Chair', description: 'Outside seating for trailers, cabins, and cottages.', category: 'outdoor', kind: 'decor', cost: 260, preview: 'chair' },
+  { id: 'flower-planter', label: 'Flower Planter', description: 'Adds life to the front step.', category: 'outdoor', kind: 'decor', cost: 220, preview: 'plant' },
+  { id: 'mailbox', label: 'Cute Mailbox', description: 'A tiny flex by the driveway.', category: 'outdoor', kind: 'decor', cost: 180, preview: 'art' },
+  { id: 'fire-pit', label: 'Fire Pit', description: 'Outdoor glow for cabin and lake nights.', category: 'outdoor', kind: 'decor', cost: 620, starsRequired: 42, preview: 'fire' },
+  { id: 'hot-tub', label: 'Hot Tub', description: 'Premium outdoor relaxation. Big boss backyard.', category: 'outdoor', kind: 'decor', cost: 1400, premium: true, preview: 'ocean' },
+  { id: 'pool-lights', label: 'Pool Lights', description: 'Endgame estate sparkle.', category: 'outdoor', kind: 'decor', cost: 1600, premium: true, preview: 'spark' },
 
   { id: 'plum-wallpaper', label: 'Plum Wallpaper', description: 'Darker walls with soft depth.', category: 'wallpapers', kind: 'wallpaper', cost: 200, preview: 'plum' },
   { id: 'forest-wallpaper', label: 'Forest Wallpaper', description: 'Calm green walls.', category: 'wallpapers', kind: 'wallpaper', starsRequired: 20, preview: 'forest' },
+  { id: 'coastal-wallpaper', label: 'Coastal Wallpaper', description: 'Light walls for beach and lake homes.', category: 'wallpapers', kind: 'wallpaper', cost: 360, preview: 'ocean' },
+  { id: 'penthouse-wallpaper', label: 'Penthouse Wallpaper', description: 'Dark luxury walls with gold shine.', category: 'wallpapers', kind: 'wallpaper', cost: 820, premium: true, preview: 'gold' },
   { id: 'polished-floor', label: 'Polished Floor', description: 'A glow-up underfoot.', category: 'floors', kind: 'floor', cost: 220, preview: 'floor' },
   { id: 'soft-rug-floor', label: 'Soft Rug Floor', description: 'Warm and quiet.', category: 'floors', kind: 'floor', starsRequired: 16, preview: 'rug' },
+  { id: 'marble-floor', label: 'Marble Floor', description: 'Premium floors for the top-tier homes.', category: 'floors', kind: 'floor', cost: 960, premium: true, preview: 'floor' },
   { id: 'ocean-view', label: 'Ocean View', description: 'Blue waves beyond the window.', category: 'views', kind: 'view', cost: 500, preview: 'ocean' },
   { id: 'mountain-view', label: 'Mountain View', description: 'A misty mountain morning.', category: 'views', kind: 'view', starsRequired: 42, preview: 'mountain' },
+  { id: 'lake-view', label: 'Lake View', description: 'Still water and soft evening light.', category: 'views', kind: 'view', cost: 620, preview: 'ocean' },
+  { id: 'skyline-view', label: 'Skyline View', description: 'Night lights for city homes.', category: 'views', kind: 'view', cost: 720, starsRequired: 58, preview: 'mountain' },
 
   { id: 'rainy-music', label: 'Rainy Music Pack', description: 'Future local music slot.', category: 'music', kind: 'music', cost: 180, preview: 'music' },
   { id: 'cafe-music', label: 'Cafe Music Pack', description: 'Future local music slot.', category: 'music', kind: 'music', cost: 260, preview: 'music' },
@@ -324,6 +388,8 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   { id: 'first-home-upgrade', label: 'First Home Upgrade', description: 'Move beyond the tiny studio.' },
   { id: 'coffee-master', label: 'Coffee Shop Master', description: 'Complete three coffee shop stories.' },
   { id: 'airport-expert', label: 'Airport Expert', description: 'Complete three airport stories.' },
+  { id: 'decor-collector', label: 'Decor Collector', description: 'Own 20 home items.' },
+  { id: 'big-home-energy', label: 'Big Home Energy', description: 'Move into a large or premium home.' },
 ];
 
 export function todayKey(): string {
@@ -453,12 +519,14 @@ export function dailyRewardForDate(date = todayKey()):
   | { type: 'hints'; amount: number; label: string }
   | { type: 'item'; itemId: string; label: string }
   | { type: 'mystery'; label: string } {
-  const seed = Number(date.replace(/\D/g, '')) % 6;
+  const seed = Number(date.replace(/\D/g, '')) % 8;
   if (seed === 0) return { type: 'coins', amount: 120, label: '120 coins' };
   if (seed === 1) return { type: 'hints', amount: 1, label: '+1 hint' };
   if (seed === 2) return { type: 'item', itemId: 'wall-art', label: 'Wall Art' };
   if (seed === 3) return { type: 'coins', amount: 180, label: '180 coins' };
   if (seed === 4) return { type: 'item', itemId: 'pet-bed', label: 'Pet Bed' };
+  if (seed === 5) return { type: 'item', itemId: 'flower-planter', label: 'Flower Planter' };
+  if (seed === 6) return { type: 'item', itemId: 'bath-mat', label: 'Bath Mat' };
   return { type: 'mystery', label: 'Mystery box preview' };
 }
 
@@ -470,6 +538,6 @@ export function homeById(id: string): HomeUpgrade {
   return HOME_UPGRADES.find((home) => home.id === id) ?? HOME_UPGRADES[0];
 }
 
-export function unique(values: string[]): string[] {
-  return Array.from(new Set(values));
+export function unique<T>(items: T[]): T[] {
+  return Array.from(new Set(items));
 }
