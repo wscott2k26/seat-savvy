@@ -14,6 +14,7 @@ import {
 } from './lifeData';
 
 type SceneMode = 'inside' | 'outside';
+type RoomMode = 'living' | 'bedroom' | 'kitchen' | 'bathroom';
 type YardTier = 'stoop' | 'patio' | 'yard' | 'deck' | 'rooftop' | 'estate';
 type HomeTrayCategory =
   | 'living'
@@ -25,6 +26,13 @@ type HomeTrayCategory =
   | 'lighting'
   | 'pets'
   | 'views';
+
+const ROOM_LABELS: Record<RoomMode, string> = {
+  living: 'Living Room',
+  bedroom: 'Bedroom',
+  kitchen: 'Kitchen',
+  bathroom: 'Bathroom',
+};
 
 const HOME_TRAY_CATEGORIES: { id: HomeTrayCategory; label: string }[] = [
   { id: 'living', label: 'Living Room' },
@@ -44,6 +52,7 @@ const HomeScreen: React.FC = () => {
   const { openMenu, openShop, progress, selectPet, toggleDecorItem, upgradeHome } = useGame();
   const [category, setCategory] = useState<HomeTrayCategory>('living');
   const [sceneMode, setSceneMode] = useState<SceneMode>('inside');
+  const [roomMode, setRoomMode] = useState<RoomMode>('living');
   const home = homeById(progress.life.homeId);
   const equipped = useMemo(() => new Set(progress.life.equippedDecor), [progress.life.equippedDecor]);
   const owned = useMemo(() => new Set(progress.life.ownedItems), [progress.life.ownedItems]);
@@ -53,6 +62,8 @@ const HomeScreen: React.FC = () => {
   );
   const selectedPet = itemById(progress.life.selectedPet);
   const stars = totalStars(progress.stars);
+  const rooms = roomsForHome(home.id);
+  const activeRoom = rooms.includes(roomMode) ? roomMode : rooms[0];
   const visibleItems = SHOP_ITEMS.filter((item) => HOME_ITEM_KINDS.has(item.kind)).filter(
     (item) => homeCategoryFor(item) === category,
   );
@@ -103,13 +114,46 @@ const HomeScreen: React.FC = () => {
           </div>
         </section>
 
-        <HomeScene equipped={equipped} home={home} mode={sceneMode} selectedPet={selectedPet} />
+        {sceneMode === 'inside' && (
+          <section className="rounded-[30px] border border-white/10 bg-white/8 p-2 shadow-[0_22px_44px_rgba(0,0,0,0.32)]">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {(['living', 'bedroom', 'kitchen', 'bathroom'] as RoomMode[]).map((room) => {
+                const unlocked = rooms.includes(room);
+                return (
+                  <button
+                    key={room}
+                    onClick={() => unlocked && setRoomMode(room)}
+                    className={`rounded-2xl px-3 py-2 text-xs font-black active:scale-95 ${
+                      activeRoom === room && unlocked
+                        ? 'bg-[#d6a84f] text-[#15101f]'
+                        : unlocked
+                        ? 'border border-white/10 bg-[#071022]/70 text-[#d9cda9]'
+                        : 'border border-white/5 bg-[#030712]/42 text-[#6f687c]'
+                    }`}
+                    type="button"
+                  >
+                    {ROOM_LABELS[room]}
+                    {!unlocked && <span className="block text-[9px] font-black uppercase tracking-wide">Upgrade</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        <HomeScene
+          equipped={equipped}
+          home={home}
+          mode={sceneMode}
+          room={activeRoom}
+          selectedPet={selectedPet}
+        />
 
         <section className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(9,16,33,0.88),rgba(6,12,26,0.76))] p-4 shadow-[0_22px_44px_rgba(0,0,0,0.38),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
               <h2 className="font-display text-xl font-black text-[#fff5d8]">Furnishings</h2>
-              <p className="text-xs font-semibold text-[#a9a0b5]">Equip owned pieces or jump to the shop for more home upgrades.</p>
+              <p className="text-xs font-semibold text-[#a9a0b5]">Equip room pieces or outside upgrades. Bigger homes unlock more rooms.</p>
             </div>
             <span className="rounded-full border border-[#d6a84f]/22 bg-[#d6a84f]/12 px-3 py-1 text-xs font-black text-[#f6d98d]">{owned.size} owned</span>
           </div>
@@ -141,30 +185,52 @@ const HomeScreen: React.FC = () => {
   );
 };
 
-const HomeScene: React.FC<{ equipped: Set<string>; home: HomeUpgrade; mode: SceneMode; selectedPet?: ShopItem }> = ({ equipped, home, mode, selectedPet }) => {
+const HomeScene: React.FC<{
+  equipped: Set<string>;
+  home: HomeUpgrade;
+  mode: SceneMode;
+  room: RoomMode;
+  selectedPet?: ShopItem;
+}> = ({ equipped, home, mode, room, selectedPet }) => {
   const mood = homeMood(home.id, equipped);
+  const yard = yardTierForHome(home.id);
+  const title = mode === 'inside' ? `${home.label} ${ROOM_LABELS[room]}` : `${home.label} Outside`;
+  const kicker = mode === 'inside' ? roomKicker(home.id, room) : `${yard} space`;
+
   return (
     <section className={`relative overflow-hidden rounded-[34px] border border-[#d6a84f]/22 bg-[#050816] shadow-[0_30px_70px_rgba(0,0,0,0.55),0_0_28px_rgba(214,168,79,0.11)] ${sceneHeightClass(home.size)}`}>
-      {mode === 'inside' ? <InteriorScene equipped={equipped} home={home} mood={mood} selectedPet={selectedPet} /> : <ExteriorScene equipped={equipped} home={home} mood={mood} />}
-      <div className="absolute left-4 top-4 rounded-2xl border border-white/10 bg-[#030712]/48 px-3 py-2 text-left shadow-xl backdrop-blur">
-        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#d6a84f]">{mode === 'inside' ? mood.insideKicker : mood.outsideKicker}</p>
-        <p className="font-display text-lg font-black leading-none text-[#fff5d8]">{home.label}</p>
+      {mode === 'inside' ? (
+        <InteriorScene equipped={equipped} home={home} mood={mood} room={room} selectedPet={selectedPet} />
+      ) : (
+        <ExteriorScene equipped={equipped} home={home} mood={mood} />
+      )}
+      <div className="absolute left-4 top-4 rounded-2xl border border-white/10 bg-[#030712]/52 px-3 py-2 text-left shadow-xl backdrop-blur">
+        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#d6a84f]">{kicker}</p>
+        <p className="font-display text-lg font-black leading-none text-[#fff5d8]">{title}</p>
       </div>
     </section>
   );
 };
 
-const InteriorScene: React.FC<{ equipped: Set<string>; home: HomeUpgrade; mood: HomeMood; selectedPet?: ShopItem }> = ({ equipped, home, mood, selectedPet }) => (
-  <>
-    <div className="absolute inset-0" style={{ background: mood.wall }} />
-    <div className="absolute inset-x-0 bottom-0 h-[44%]" style={{ background: mood.floor }} />
-    <div className="absolute inset-0 bg-[radial-gradient(circle_at_48%_10%,rgba(255,220,150,0.16),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.06),transparent_42%,rgba(0,0,0,0.38))]" />
-    <InteriorArchitecture homeId={home.id} />
-    <Window mood={mood} />
-    <BuiltInRoomFeatures homeId={home.id} />
-    <EquippedDecor equipped={equipped} selectedPet={selectedPet} />
-  </>
-);
+const InteriorScene: React.FC<{
+  equipped: Set<string>;
+  home: HomeUpgrade;
+  mood: HomeMood;
+  room: RoomMode;
+  selectedPet?: ShopItem;
+}> = ({ equipped, home, mood, room, selectedPet }) => {
+  const roomStyle = styleForRoom(home.id, room, mood);
+  return (
+    <>
+      <div className="absolute inset-0" style={{ background: roomStyle.wall }} />
+      <div className="absolute inset-x-0 bottom-0 h-[45%]" style={{ background: roomStyle.floor }} />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_48%_10%,rgba(255,220,150,0.16),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.06),transparent_42%,rgba(0,0,0,0.38))]" />
+      <RoomArchitecture home={home} room={room} />
+      {room !== 'bathroom' && <Window mood={mood} room={room} />}
+      <RoomFurniture equipped={equipped} home={home} room={room} selectedPet={selectedPet} />
+    </>
+  );
+};
 
 const ExteriorScene: React.FC<{ equipped: Set<string>; home: HomeUpgrade; mood: HomeMood }> = ({ equipped, home, mood }) => {
   const yard = yardTierForHome(home.id);
@@ -203,13 +269,43 @@ const ExteriorScene: React.FC<{ equipped: Set<string>; home: HomeUpgrade; mood: 
 
 type HomeMood = { insideKicker: string; outsideKicker: string; view: string; wall: string; floor: string; sky: string; ground: string };
 
+function roomsForHome(homeId: string): RoomMode[] {
+  if (homeId === 'tiny-studio') return ['living'];
+  if (homeId === 'small-trailer') return ['living', 'bedroom', 'kitchen'];
+  if (homeId === 'starter-apartment' || homeId === 'city-apartment') return ['living', 'bedroom', 'kitchen', 'bathroom'];
+  return ['living', 'bedroom', 'kitchen', 'bathroom'];
+}
+
+function roomKicker(homeId: string, room: RoomMode): string {
+  const tier = roomsForHome(homeId).length;
+  if (room === 'living') return tier === 1 ? 'studio room' : 'main room';
+  if (room === 'bedroom') return tier <= 2 ? 'sleep nook' : 'private room';
+  if (room === 'kitchen') return homeId === 'small-trailer' ? 'compact kitchen' : 'full kitchen';
+  return tier >= 4 ? 'bath suite' : 'upgrade room';
+}
+
 function homeMood(homeId: string, equipped: Set<string>): HomeMood {
   const view = viewFor(equipped, homeId);
-  const wallpaper = equipped.has('penthouse-wallpaper') ? 'linear-gradient(135deg,#050816,#171122 48%,#2c2140)' : equipped.has('coastal-wallpaper') ? 'linear-gradient(135deg,#d8c7a2,#5d91a6 56%,#0d4057)' : equipped.has('forest-wallpaper') ? 'linear-gradient(135deg,#102820,#26382f 56%,#0b1728)' : equipped.has('plum-wallpaper') ? 'linear-gradient(135deg,#141020,#32213f 54%,#091322)' : 'linear-gradient(135deg,#0c1427,#1e2536 48%,#17111f)';
-  const floor = equipped.has('marble-floor') ? 'repeating-linear-gradient(105deg,#d9d2c0 0 22px,#a9a0b5 22px 44px)' : equipped.has('soft-rug-floor') ? 'repeating-linear-gradient(105deg,#2b2434 0 18px,#211b2a 18px 36px)' : equipped.has('polished-floor') ? 'repeating-linear-gradient(105deg,#7a5833 0 22px,#5b3f26 22px 44px)' : 'repeating-linear-gradient(105deg,#533824 0 20px,#3f2b1d 20px 40px)';
+  const wallpaper = equipped.has('penthouse-wallpaper')
+    ? 'linear-gradient(135deg,#050816,#171122 48%,#2c2140)'
+    : equipped.has('coastal-wallpaper')
+    ? 'linear-gradient(135deg,#d8c7a2,#5d91a6 56%,#0d4057)'
+    : equipped.has('forest-wallpaper')
+    ? 'linear-gradient(135deg,#102820,#26382f 56%,#0b1728)'
+    : equipped.has('plum-wallpaper')
+    ? 'linear-gradient(135deg,#141020,#32213f 54%,#091322)'
+    : 'linear-gradient(135deg,#0c1427,#1e2536 48%,#17111f)';
+  const floor = equipped.has('marble-floor')
+    ? 'repeating-linear-gradient(105deg,#d9d2c0 0 22px,#a9a0b5 22px 44px)'
+    : equipped.has('soft-rug-floor')
+    ? 'repeating-linear-gradient(105deg,#2b2434 0 18px,#211b2a 18px 36px)'
+    : equipped.has('polished-floor')
+    ? 'repeating-linear-gradient(105deg,#7a5833 0 22px,#5b3f26 22px 44px)'
+    : 'repeating-linear-gradient(105deg,#533824 0 20px,#3f2b1d 20px 40px)';
+
   const moods: Record<string, HomeMood> = {
     'tiny-studio': { insideKicker: 'One-room start', outsideKicker: 'Starter stoop', view, wall: wallpaper, floor, sky: 'linear-gradient(180deg,#1b2436,#2d3445 58%,#121722)', ground: 'linear-gradient(180deg,#263327,#121812)' },
-    'small-trailer': { insideKicker: 'Trailer kitchenette', outsideKicker: 'Awning patio', view: 'neighborhood', wall: 'repeating-linear-gradient(90deg,#1b2028 0 34px,#252832 34px 68px)', floor: 'repeating-linear-gradient(105deg,#4f3928 0 18px,#3a2a20 18px 36px)', sky: 'linear-gradient(180deg,#263045,#6e5d43 60%,#20242d)', ground: 'linear-gradient(180deg,#5d4a32,#2d241b)' },
+    'small-trailer': { insideKicker: 'Trailer living', outsideKicker: 'Awning patio', view: 'neighborhood', wall: 'repeating-linear-gradient(90deg,#1b2028 0 34px,#252832 34px 68px)', floor: 'repeating-linear-gradient(105deg,#4f3928 0 18px,#3a2a20 18px 36px)', sky: 'linear-gradient(180deg,#263045,#6e5d43 60%,#20242d)', ground: 'linear-gradient(180deg,#5d4a32,#2d241b)' },
     'starter-apartment': { insideKicker: 'Two-zone apartment', outsideKicker: 'Shared courtyard', view: 'skyline', wall: 'linear-gradient(135deg,#101827,#202d43 52%,#12111d)', floor: 'repeating-linear-gradient(105deg,#63472e 0 22px,#493421 22px 44px)', sky: 'linear-gradient(180deg,#111d33,#2d4062 58%,#111827)', ground: 'linear-gradient(180deg,#36404e,#161b24)' },
     'suburban-house': { insideKicker: 'Real house flow', outsideKicker: 'Front yard unlocked', view: 'neighborhood', wall: 'linear-gradient(135deg,#1b2431,#354055 52%,#18131d)', floor: 'repeating-linear-gradient(105deg,#7a5634 0 22px,#5a3d25 22px 44px)', sky: 'linear-gradient(180deg,#2d4764,#6b7d8a 60%,#213047)', ground: 'linear-gradient(180deg,#537044,#26381f)' },
     'city-apartment': { insideKicker: 'City evening', outsideKicker: 'Tiny balcony', view: 'skyline', wall: 'linear-gradient(135deg,#091426,#1c263b 48%,#10101c)', floor, sky: 'linear-gradient(180deg,#081326,#243a65 58%,#050816)', ground: 'linear-gradient(180deg,#101827,#050816)' },
@@ -224,6 +320,20 @@ function homeMood(homeId: string, equipped: Set<string>): HomeMood {
   return moods[homeId] ?? moods['tiny-studio'];
 }
 
+function styleForRoom(homeId: string, room: RoomMode, mood: HomeMood) {
+  const premium = ['luxury-penthouse', 'dream-estate'].includes(homeId);
+  if (room === 'bedroom') {
+    return { wall: premium ? 'linear-gradient(135deg,#100b19,#2a1b36 54%,#050816)' : 'linear-gradient(135deg,#171323,#34243c 54%,#101827)', floor: mood.floor };
+  }
+  if (room === 'kitchen') {
+    return { wall: premium ? 'linear-gradient(135deg,#09121d,#263145 54%,#16111d)' : 'linear-gradient(135deg,#12202a,#2c4050 54%,#101827)', floor: 'repeating-linear-gradient(105deg,#5b6572 0 22px,#414a55 22px 44px)' };
+  }
+  if (room === 'bathroom') {
+    return { wall: premium ? 'linear-gradient(135deg,#18202c,#d8c7a2 54%,#17223a)' : 'linear-gradient(135deg,#10202a,#5f7f8d 54%,#182334)', floor: 'repeating-linear-gradient(105deg,#d8d8d8 0 22px,#a9b3bd 22px 44px)' };
+  }
+  return { wall: mood.wall, floor: mood.floor };
+}
+
 function yardTierForHome(homeId: string): YardTier {
   if (homeId === 'dream-estate') return 'estate';
   if (homeId === 'luxury-penthouse' || homeId === 'city-loft') return 'rooftop';
@@ -235,36 +345,163 @@ function yardTierForHome(homeId: string): YardTier {
 
 const yardRank: Record<YardTier, number> = { stoop: 0, patio: 1, yard: 2, deck: 3, rooftop: 4, estate: 5 };
 function yardAllows(current: YardTier, required: YardTier): boolean { return yardRank[current] >= yardRank[required]; }
+function sceneHeightClass(size: HomeUpgrade['size']): string { if (size === 'premium') return 'h-[560px]'; if (size === 'large') return 'h-[500px]'; if (size === 'medium') return 'h-[455px]'; if (size === 'small') return 'h-[420px]'; return 'h-[380px]'; }
+function homeProgressStats(home: HomeUpgrade) {
+  const yard = yardTierForHome(home.id);
+  const rooms = roomsForHome(home.id).length;
+  if (home.size === 'premium') return { rooms: `${rooms} rooms`, yard: yard === 'estate' ? 'Pool yard' : 'Rooftop', vibe: 'Endgame' };
+  if (home.size === 'large') return { rooms: `${rooms} rooms`, yard: yard === 'rooftop' ? 'Rooftop' : 'Deck', vibe: 'Glow-up' };
+  if (home.size === 'medium') return { rooms: `${rooms} rooms`, yard: yard === 'yard' ? 'Yard' : 'Balcony', vibe: 'Settled' };
+  if (home.size === 'small') return { rooms: `${rooms} rooms`, yard: 'Patio', vibe: 'Moving up' };
+  return { rooms: '1 room', yard: 'Stoop', vibe: 'Starter' };
+}
 
-function sceneHeightClass(size: HomeUpgrade['size']): string { if (size === 'premium') return 'h-[540px]'; if (size === 'large') return 'h-[480px]'; if (size === 'medium') return 'h-[430px]'; if (size === 'small') return 'h-[405px]'; return 'h-[370px]'; }
-function homeProgressStats(home: HomeUpgrade) { const yard = yardTierForHome(home.id); if (home.size === 'premium') return { rooms: '5+ rooms', yard: yard === 'estate' ? 'Pool yard' : 'Rooftop', vibe: 'Endgame' }; if (home.size === 'large') return { rooms: '4 rooms', yard: yard === 'rooftop' ? 'Rooftop' : 'Deck', vibe: 'Glow-up' }; if (home.size === 'medium') return { rooms: '3 rooms', yard: yard === 'yard' ? 'Yard' : 'Balcony', vibe: 'Settled' }; if (home.size === 'small') return { rooms: '2 rooms', yard: 'Patio', vibe: 'Moving up' }; return { rooms: '1 room', yard: 'Stoop', vibe: 'Starter' }; }
+const RoomArchitecture: React.FC<{ home: HomeUpgrade; room: RoomMode }> = ({ home, room }) => {
+  const larger = home.size === 'large' || home.size === 'premium';
+  if (room === 'bathroom') {
+    return (
+      <>
+        <span className="absolute left-[7%] right-[7%] top-[18%] h-px bg-white/15" />
+        <span className="absolute left-[9%] top-[16%] h-28 w-28 rounded-[32px] border border-white/12 bg-[#b7d6e8]/18 shadow-xl" />
+        <span className="absolute right-[12%] top-[17%] h-24 w-24 rounded-full border-4 border-[#d6a84f]/24 bg-white/16 shadow-xl" />
+      </>
+    );
+  }
+  if (room === 'kitchen') {
+    return (
+      <>
+        <span className="absolute left-[7%] right-[7%] top-[18%] h-16 rounded-[28px] border border-white/10 bg-black/16 shadow-xl" />
+        <span className="absolute left-[8%] right-[8%] bottom-[35%] h-12 rounded-t-[24px] bg-[#d6a84f]/18 shadow-xl" />
+        {larger && <span className="absolute left-[37%] bottom-[20%] h-20 w-36 rounded-[28px] bg-[#2f3846] shadow-2xl ring-1 ring-white/10" />}
+      </>
+    );
+  }
+  if (room === 'bedroom') {
+    return (
+      <>
+        <span className="absolute left-[6%] top-[15%] h-24 w-32 rounded-[28px] border border-[#f6d98d]/14 bg-[#9fb6d9]/16 shadow-xl" />
+        {larger && <span className="absolute right-[10%] top-[18%] h-24 w-20 rounded-t-[30px] bg-[#d6a84f]/12 shadow-xl" />}
+      </>
+    );
+  }
+  return (
+    <>
+      <span className={`absolute left-[4%] top-[16%] rounded-[28px] border border-[#f6d98d]/16 bg-[#9fb6d9]/18 shadow-xl ${larger ? 'h-28 w-36' : 'h-20 w-28'}`} />
+      {larger && <span className="absolute left-[42%] top-[15%] h-24 w-28 rounded-[28px] border border-[#f6d98d]/14 bg-[#9fb6d9]/14 shadow-xl" />}
+    </>
+  );
+};
 
-const InteriorArchitecture: React.FC<{ homeId: string }> = ({ homeId }) => { const big = ['suburban-house', 'beach-cottage', 'lake-house', 'city-loft', 'garden-villa', 'luxury-penthouse', 'dream-estate'].includes(homeId); return <><span className={`absolute left-[4%] top-[16%] rounded-[28px] border border-[#f6d98d]/16 bg-[#9fb6d9]/18 shadow-xl ${big ? 'h-28 w-36' : 'h-20 w-28'}`} />{big && <span className="absolute left-[42%] top-[15%] h-24 w-28 rounded-[28px] border border-[#f6d98d]/14 bg-[#9fb6d9]/14 shadow-xl" />}{homeId === 'small-trailer' && <span className="absolute left-[4%] right-[4%] top-[12%] h-5 rounded-full bg-[#d6a84f]/18" />}{homeId === 'cozy-cabin' && <span className="absolute left-0 right-0 top-[23%] h-4 bg-[repeating-linear-gradient(90deg,#6b4426_0_28px,#4a2f1c_28px_56px)] shadow-lg" />}{homeId === 'luxury-penthouse' && <span className="absolute right-[9%] top-[22%] h-32 w-24 rounded-t-[40px] bg-[#d6a84f]/16 shadow-xl" />}</>; };
-const BuiltInRoomFeatures: React.FC<{ homeId: string }> = ({ homeId }) => <><FloorLamp /><KitchenCompact large={['suburban-house', 'beach-cottage', 'lake-house', 'garden-villa', 'dream-estate'].includes(homeId)} /><MediaConsole upgraded={['city-apartment', 'city-loft', 'luxury-penthouse', 'dream-estate'].includes(homeId)} />{['cozy-cabin', 'lake-house'].includes(homeId) && <Fireplace builtIn />}{['luxury-penthouse', 'dream-estate'].includes(homeId) && <TrophyWall />}</>;
-const EquippedDecor: React.FC<{ equipped: Set<string>; selectedPet?: ShopItem }> = ({ equipped, selectedPet }) => <>{(equipped.has('old-couch') || equipped.has('sectional-sofa')) && <ModernSofa big={equipped.has('sectional-sofa')} />}{(equipped.has('cozy-bed') || equipped.has('luxury-bed')) && <StudioBed luxury={equipped.has('luxury-bed')} />}{(equipped.has('small-table') || equipped.has('kitchen-island')) && <CoffeeTable big={equipped.has('kitchen-island')} />}{(equipped.has('starter-plant') || equipped.has('flower-planter')) && <TallPlant />}{equipped.has('bookshelf') && <RealBookshelf />}{(equipped.has('gaming-chair') || equipped.has('reading-chair')) && <LoungeChair />}{equipped.has('desk-setup') && <DeskSetup />}{equipped.has('coffee-maker') && <CounterCoffee />}{equipped.has('diner-booth') && <DinerBooth />}{equipped.has('wall-art') && <WallArt />}{equipped.has('round-mirror') && <WallMirror />}{equipped.has('trophy-shelf') && <TrophyShelf />}{equipped.has('aquarium') && <Aquarium />}{equipped.has('fireplace') && <Fireplace />}{equipped.has('cozy-rug') && <Rug />}{equipped.has('bath-mat') && <BathMat />}{equipped.has('pet-bed') && <PetBed />}{(equipped.has('neon-sign') || equipped.has('string-lights')) && <NeonSign stringLights={equipped.has('string-lights')} />}{equipped.has('floor-lamp-upgrade') && <SecondLamp />}{equipped.has('piano') && <Piano />}{equipped.has('jukebox') && <Jukebox />}{equipped.has('telescope') && <Telescope />}{equipped.has('spa-candles') && <SpaCandles />}{equipped.has('gold-fridge') && <GoldFridge />}{selectedPet && <Pet kind={selectedPet.preview} />}</>;
+const RoomFurniture: React.FC<{ equipped: Set<string>; home: HomeUpgrade; room: RoomMode; selectedPet?: ShopItem }> = ({ equipped, home, room, selectedPet }) => {
+  if (room === 'bedroom') {
+    return <BedroomFurniture equipped={equipped} home={home} selectedPet={selectedPet} />;
+  }
+  if (room === 'kitchen') {
+    return <KitchenFurniture equipped={equipped} home={home} />;
+  }
+  if (room === 'bathroom') {
+    return <BathroomFurniture equipped={equipped} home={home} />;
+  }
+  return <LivingFurniture equipped={equipped} home={home} selectedPet={selectedPet} />;
+};
 
-const Window: React.FC<{ mood: { view: string } }> = ({ mood }) => { const backgrounds: Record<string, string> = { rain: 'linear-gradient(180deg,#1c2b45,#496078 62%,#1b283a)', neighborhood: 'linear-gradient(180deg,#293348,#655640 62%,#20242d)', skyline: 'linear-gradient(180deg,#0c1730,#1f3760 58%,#070b14)', ocean: 'linear-gradient(180deg,#8db8c7,#256b83 58%,#0d4057)', mountain: 'linear-gradient(180deg,#5b6d7c,#2f4a40 60%,#13241c)', lake: 'linear-gradient(180deg,#4e6475,#275a5f 58%,#102d34)', garden: 'linear-gradient(180deg,#789b75,#3f6f4b 58%,#17331e)', estate: 'linear-gradient(180deg,#9fb6d9,#304f7a 58%,#101827)' }; return <div className="absolute right-[7%] top-[12%] h-36 w-36 overflow-hidden rounded-[28px] border border-[#f6d98d]/18 p-2 shadow-[0_20px_38px_rgba(0,0,0,0.42)] ring-4 ring-[#050816]/70" style={{ background: backgrounds[mood.view] ?? backgrounds.rain }}><div className="absolute inset-x-0 bottom-0 h-12 bg-black/20" />{(mood.view === 'skyline' || mood.view === 'estate') && <Skyline />}{mood.view === 'rain' && <RainLines />}{mood.view === 'neighborhood' && <Neighborhood />}{(mood.view === 'ocean' || mood.view === 'lake') && <WaterLines />}{mood.view === 'mountain' && <MountainLines />}{mood.view === 'garden' && <GardenLines />}<div className="relative grid h-full grid-cols-2 gap-1.5">{Array.from({ length: 4 }).map((_, i) => <span key={i} className="rounded-xl bg-white/10 shadow-inner" />)}</div></div>; };
+const LivingFurniture: React.FC<{ equipped: Set<string>; home: HomeUpgrade; selectedPet?: ShopItem }> = ({ equipped, home, selectedPet }) => (
+  <>
+    <ModernSofa big={home.size === 'large' || home.size === 'premium' || equipped.has('sectional-sofa')} />
+    {equipped.has('small-table') && <CoffeeTable big={equipped.has('kitchen-island')} />}
+    {equipped.has('starter-plant') && <TallPlant />}
+    {equipped.has('bookshelf') && <RealBookshelf />}
+    {(equipped.has('gaming-chair') || equipped.has('reading-chair')) && <LoungeChair />}
+    {equipped.has('tiny-tv') && <MediaConsole upgraded={home.size !== 'tiny'} />}
+    {equipped.has('wall-art') && <WallArt />}
+    {equipped.has('trophy-shelf') && <TrophyShelf />}
+    {equipped.has('aquarium') && <Aquarium />}
+    {equipped.has('fireplace') && <Fireplace />}
+    {equipped.has('cozy-rug') && <Rug />}
+    {(equipped.has('neon-sign') || equipped.has('string-lights')) && <NeonSign stringLights={equipped.has('string-lights')} />}
+    {equipped.has('floor-lamp-upgrade') ? <SecondLamp /> : <FloorLamp />}
+    {equipped.has('piano') && <Piano />}
+    {equipped.has('jukebox') && <Jukebox />}
+    {equipped.has('telescope') && <Telescope />}
+    {selectedPet && <Pet kind={selectedPet.preview} />}
+  </>
+);
+
+const BedroomFurniture: React.FC<{ equipped: Set<string>; home: HomeUpgrade; selectedPet?: ShopItem }> = ({ equipped, home, selectedPet }) => (
+  <>
+    <StudioBed luxury={home.size === 'premium' || equipped.has('luxury-bed')} />
+    <NightStand />
+    <Dresser luxury={home.size === 'premium'} />
+    {equipped.has('pet-bed') && <PetBed />}
+    {equipped.has('cozy-rug') && <Rug />}
+    {equipped.has('round-mirror') && <WallMirror />}
+    {equipped.has('wall-art') && <WallArt />}
+    {equipped.has('floor-lamp-upgrade') ? <SecondLamp /> : <FloorLamp />}
+    {selectedPet && <Pet kind={selectedPet.preview} />}
+  </>
+);
+
+const KitchenFurniture: React.FC<{ equipped: Set<string>; home: HomeUpgrade }> = ({ equipped, home }) => (
+  <>
+    <KitchenCompact large={home.size !== 'tiny' && home.size !== 'small'} />
+    <KitchenCabinets premium={home.size === 'premium'} />
+    {equipped.has('coffee-maker') && <CounterCoffee />}
+    {equipped.has('kitchen-island') && <KitchenIsland premium={home.size === 'premium'} />}
+    {equipped.has('fruit-bowl') && <FruitBowl />}
+    {equipped.has('gold-fridge') ? <GoldFridge /> : <PlainFridge />}
+    {equipped.has('diner-booth') && <DinerBooth />}
+    {equipped.has('small-table') && <CoffeeTable big={false} />}
+  </>
+);
+
+const BathroomFurniture: React.FC<{ equipped: Set<string>; home: HomeUpgrade }> = ({ equipped, home }) => (
+  <>
+    <Bathtub luxury={home.size === 'premium'} />
+    <BathroomVanity />
+    <Shower />
+    {equipped.has('bath-mat') && <BathMat />}
+    {equipped.has('round-mirror') && <WallMirror />}
+    {equipped.has('towel-rack') && <TowelRack />}
+    {equipped.has('spa-candles') && <SpaCandles />}
+    {equipped.has('starter-plant') && <TallPlant />}
+  </>
+);
+
+const Window: React.FC<{ mood: { view: string }; room: RoomMode }> = ({ mood, room }) => {
+  const backgrounds: Record<string, string> = { rain: 'linear-gradient(180deg,#1c2b45,#496078 62%,#1b283a)', neighborhood: 'linear-gradient(180deg,#293348,#655640 62%,#20242d)', skyline: 'linear-gradient(180deg,#0c1730,#1f3760 58%,#070b14)', ocean: 'linear-gradient(180deg,#8db8c7,#256b83 58%,#0d4057)', mountain: 'linear-gradient(180deg,#5b6d7c,#2f4a40 60%,#13241c)', lake: 'linear-gradient(180deg,#4e6475,#275a5f 58%,#102d34)', garden: 'linear-gradient(180deg,#789b75,#3f6f4b 58%,#17331e)', estate: 'linear-gradient(180deg,#9fb6d9,#304f7a 58%,#101827)' };
+  const sizeClass = room === 'kitchen' ? 'h-24 w-40' : room === 'bedroom' ? 'h-28 w-32' : 'h-36 w-36';
+  return <div className={`absolute right-[7%] top-[12%] overflow-hidden rounded-[28px] border border-[#f6d98d]/18 p-2 shadow-[0_20px_38px_rgba(0,0,0,0.42)] ring-4 ring-[#050816]/70 ${sizeClass}`} style={{ background: backgrounds[mood.view] ?? backgrounds.rain }}><div className="absolute inset-x-0 bottom-0 h-12 bg-black/20" />{(mood.view === 'skyline' || mood.view === 'estate') && <Skyline />}{mood.view === 'rain' && <RainLines />}{mood.view === 'neighborhood' && <Neighborhood />}{(mood.view === 'ocean' || mood.view === 'lake') && <WaterLines />}{mood.view === 'mountain' && <MountainLines />}{mood.view === 'garden' && <GardenLines />}<div className="relative grid h-full grid-cols-2 gap-1.5">{Array.from({ length: 4 }).map((_, i) => <span key={i} className="rounded-xl bg-white/10 shadow-inner" />)}</div></div>;
+};
+
 const HomeFacade: React.FC<{ homeId: string }> = ({ homeId }) => { const facade = facadeSpec(homeId); return <div className="absolute left-1/2 bottom-[25%] h-[46%] w-[72%] -translate-x-1/2"><span className="absolute left-1/2 top-0 h-[32%] w-[62%] -translate-x-1/2 rounded-t-[42px]" style={{ background: facade.roof, clipPath: 'polygon(50% 0, 100% 100%, 0 100%)' }} /><span className="absolute bottom-0 left-1/2 h-[78%] w-[78%] -translate-x-1/2 rounded-t-[28px] border border-white/12 shadow-2xl" style={{ background: facade.body }} /><span className="absolute bottom-0 left-1/2 h-[28%] w-[18%] -translate-x-1/2 rounded-t-2xl bg-[#17111f] ring-2 ring-[#d6a84f]/18" /><span className="absolute bottom-[42%] left-[20%] h-[19%] w-[18%] rounded-2xl bg-[#9fb6d9]/42 ring-2 ring-white/20" /><span className="absolute bottom-[42%] right-[20%] h-[19%] w-[18%] rounded-2xl bg-[#9fb6d9]/42 ring-2 ring-white/20" />{facade.extra === 'wheels' && <><span className="absolute -bottom-4 left-[21%] h-8 w-8 rounded-full bg-[#050816] ring-4 ring-[#343a46]" /><span className="absolute -bottom-4 right-[21%] h-8 w-8 rounded-full bg-[#050816] ring-4 ring-[#343a46]" /></>}{facade.extra === 'balcony' && <span className="absolute bottom-[30%] left-[18%] right-[18%] h-4 rounded-full bg-[#d6a84f]/32" />}</div>; };
 function facadeSpec(homeId: string) { if (homeId === 'small-trailer') return { body: 'linear-gradient(180deg,#c7a26b,#7b5f42)', roof: '#4a2f1c', extra: 'wheels' }; if (homeId === 'starter-apartment') return { body: 'linear-gradient(180deg,#35445a,#1c2634)', roof: '#151b26', extra: 'none' }; if (homeId === 'suburban-house') return { body: 'linear-gradient(180deg,#9c6f50,#5e3f2a)', roof: '#402719', extra: 'none' }; if (homeId === 'city-apartment') return { body: 'linear-gradient(180deg,#24354f,#0f1724)', roof: '#0b1020', extra: 'none' }; if (homeId === 'cozy-cabin') return { body: 'repeating-linear-gradient(90deg,#6b4426_0_26px,#4a2f1c_26px_52px)', roof: '#2d1c12', extra: 'none' }; if (homeId === 'beach-cottage') return { body: 'linear-gradient(180deg,#eadfcb,#8db8c7)', roof: '#d6a84f', extra: 'balcony' }; if (homeId === 'lake-house') return { body: 'linear-gradient(180deg,#6a4a2e,#26382f)', roof: '#2b1d13', extra: 'balcony' }; if (homeId === 'city-loft') return { body: 'linear-gradient(180deg,#1d2740,#071022)', roof: '#050816', extra: 'balcony' }; if (homeId === 'garden-villa') return { body: 'linear-gradient(180deg,#d8c7a2,#6b8461)', roof: '#526443', extra: 'balcony' }; if (homeId === 'luxury-penthouse') return { body: 'linear-gradient(180deg,#161226,#050816)', roof: '#d6a84f', extra: 'balcony' }; if (homeId === 'dream-estate') return { body: 'linear-gradient(180deg,#eadfcb,#90724b)', roof: '#2a1c13', extra: 'none' }; return { body: 'linear-gradient(180deg,#3b445d,#1c2433)', roof: '#151b26', extra: 'none' }; }
 const BackdropLandscape: React.FC<{ view: string }> = ({ view }) => <div className="absolute inset-x-0 bottom-[33%] h-[34%] opacity-75">{(view === 'skyline' || view === 'estate') && <Skyline />}{view === 'mountain' && <MountainLines />}{(view === 'ocean' || view === 'lake') && <WaterLines />}{view === 'garden' && <GardenLines />}{view === 'neighborhood' && <Neighborhood />}</div>;
 
 const ModernSofa: React.FC<{ big?: boolean }> = ({ big = false }) => <div className={`absolute left-[7%] bottom-[22%] ${big ? 'h-28 w-52' : 'h-24 w-40'}`}><div className="absolute bottom-0 h-14 w-full rounded-[24px] bg-[linear-gradient(180deg,#4f435d,#30263c)] shadow-[0_18px_26px_rgba(0,0,0,0.42)] ring-1 ring-white/8" /><div className="absolute bottom-10 left-3 right-3 h-14 rounded-[24px] bg-[linear-gradient(180deg,#6a5a74,#43364f)] shadow-lg" /></div>;
-const StudioBed: React.FC<{ luxury?: boolean }> = ({ luxury = false }) => <div className={`absolute right-[6%] bottom-[20%] ${luxury ? 'h-24 w-44' : 'h-20 w-36'}`}><div className={`absolute bottom-0 h-12 w-full rounded-[20px] shadow-xl ring-1 ring-white/8 ${luxury ? 'bg-[#3b2b16]' : 'bg-[#4b2c38]'}`} /><div className="absolute bottom-8 left-3 right-3 h-9 rounded-2xl bg-[#d8c7a2]/80" /></div>;
+const StudioBed: React.FC<{ luxury?: boolean }> = ({ luxury = false }) => <div className={`absolute left-[8%] bottom-[20%] ${luxury ? 'h-28 w-56' : 'h-24 w-44'}`}><div className={`absolute bottom-0 h-14 w-full rounded-[22px] shadow-xl ring-1 ring-white/8 ${luxury ? 'bg-[#3b2b16]' : 'bg-[#4b2c38]'}`} /><div className="absolute bottom-10 left-4 right-4 h-12 rounded-2xl bg-[#d8c7a2]/80" /><div className="absolute bottom-[70px] left-7 h-7 w-16 rounded-xl bg-[#253650]" /></div>;
 const CoffeeTable: React.FC<{ big?: boolean }> = ({ big = false }) => <div className={`absolute left-[42%] bottom-[22%] h-12 ${big ? 'w-36' : 'w-24'}`}><div className="absolute bottom-4 h-4 w-full rounded-full bg-[linear-gradient(180deg,#9b7045,#5d3a21)] shadow-[0_14px_20px_rgba(0,0,0,0.34)] ring-1 ring-[#f6d98d]/14" /></div>;
 const FloorLamp = () => <div className="absolute left-[5%] top-[26%] h-40 w-20"><span className="absolute left-9 top-12 h-24 w-1.5 rounded-full bg-[#8a6a3b]" /><span className="absolute left-4 top-2 h-14 w-12 rounded-[22px] bg-[linear-gradient(180deg,#f4d68a,#9b6c32)] shadow-[0_0_32px_rgba(244,214,138,0.36)]" /></div>;
-const KitchenCompact: React.FC<{ large?: boolean }> = ({ large = false }) => <div className={`absolute right-[5%] bottom-[21%] h-28 ${large ? 'w-44' : 'w-36'} opacity-95`}><div className="absolute bottom-0 h-16 w-full rounded-t-2xl bg-[linear-gradient(180deg,#2a3344,#151b26)] shadow-xl ring-1 ring-white/8" /><div className="absolute bottom-16 left-2 right-2 h-3 rounded-full bg-[#b58a53]" /></div>;
+const KitchenCompact: React.FC<{ large?: boolean }> = ({ large = false }) => <div className={`absolute right-[5%] bottom-[21%] h-28 ${large ? 'w-52' : 'w-40'} opacity-95`}><div className="absolute bottom-0 h-16 w-full rounded-t-2xl bg-[linear-gradient(180deg,#2a3344,#151b26)] shadow-xl ring-1 ring-white/8" /><div className="absolute bottom-16 left-2 right-2 h-3 rounded-full bg-[#b58a53]" /></div>;
+const KitchenCabinets: React.FC<{ premium?: boolean }> = ({ premium = false }) => <div className="absolute left-[8%] top-[20%] h-24 w-60 rounded-[24px] bg-[#1d2735]/82 shadow-2xl ring-1 ring-white/10"><span className={`absolute left-3 top-3 h-16 w-16 rounded-2xl ${premium ? 'bg-[#d6a84f]/32' : 'bg-[#6a4a30]/70'}`} /><span className="absolute left-24 top-3 h-16 w-16 rounded-2xl bg-[#344154]" /><span className="absolute right-3 top-3 h-16 w-16 rounded-2xl bg-[#344154]" /></div>;
+const KitchenIsland: React.FC<{ premium?: boolean }> = ({ premium = false }) => <div className={`absolute left-[32%] bottom-[18%] h-24 w-44 rounded-[30px] shadow-2xl ring-1 ring-white/10 ${premium ? 'bg-[linear-gradient(180deg,#d6a84f,#6f4c24)]' : 'bg-[#2f3846]'}`}><span className="absolute left-5 right-5 top-4 h-3 rounded-full bg-white/20" /></div>;
+const FruitBowl = () => <div className="absolute left-[45%] bottom-[36%] h-10 w-16 rounded-full bg-[#d6a84f]/70 shadow-xl"><span className="absolute left-3 top-[-7px] h-4 w-4 rounded-full bg-[#a86a78]" /><span className="absolute right-4 top-[-8px] h-4 w-4 rounded-full bg-[#87aa67]" /></div>;
+const PlainFridge = () => <div className="absolute right-[6%] bottom-[35%] h-24 w-14 rounded-xl bg-[linear-gradient(180deg,#8fa0b8,#4b5568)] shadow-xl ring-1 ring-white/15" />;
 const MediaConsole: React.FC<{ upgraded: boolean }> = ({ upgraded }) => <div className="absolute left-[35%] top-[41%] h-20 w-32"><div className={`absolute left-5 top-0 h-12 w-24 rounded-xl bg-[#050816] shadow-xl ring-4 ${upgraded ? 'ring-[#d6a84f]/28' : 'ring-[#243148]'}`}><div className="absolute inset-2 rounded-lg bg-[linear-gradient(135deg,#17243a,#0b1020)]" /></div><div className="absolute bottom-0 h-8 w-32 rounded-2xl bg-[linear-gradient(180deg,#3b2a21,#211811)] shadow-lg" /></div>;
 const TallPlant = () => <div className="absolute left-[19%] bottom-[21%] h-28 w-16"><span className="absolute bottom-0 left-5 h-9 w-9 rounded-t-xl bg-[linear-gradient(180deg,#6d4329,#402719)] shadow-lg" /><span className="absolute bottom-8 left-4 h-16 w-5 -rotate-12 rounded-full bg-[#6f9b58] shadow-lg" /><span className="absolute bottom-9 left-8 h-[68px] w-5 rotate-12 rounded-full bg-[#87aa67] shadow-lg" /></div>;
 const RealBookshelf = () => <div className="absolute left-[5%] top-[36%] h-32 w-20 rounded-2xl bg-[linear-gradient(180deg,#4b2f1f,#241811)] p-2 shadow-2xl ring-1 ring-[#f6d98d]/10">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="mb-2 flex gap-1"><span className="h-3 w-4 rounded-sm bg-[#d6a84f]/70" /><span className="h-3 w-6 rounded-sm bg-[#7f8fa3]/80" /></div>)}</div>;
 const LoungeChair = () => <div className="absolute right-[20%] bottom-[22%] h-24 w-20"><div className="absolute bottom-2 left-2 h-16 w-14 rounded-[24px] bg-[linear-gradient(180deg,#31536c,#17263a)] shadow-xl" /></div>;
-const DeskSetup = () => <div className="absolute left-[49%] bottom-[25%] h-20 w-32"><div className="absolute bottom-0 h-4 w-full rounded-full bg-[#6a4129] shadow-xl" /><span className="absolute bottom-4 left-3 h-12 w-20 rounded-xl bg-[#08111f] ring-2 ring-[#394b63]" /></div>;
+const NightStand = () => <div className="absolute left-[56%] bottom-[23%] h-16 w-16 rounded-2xl bg-[#5d4026] shadow-xl"><span className="absolute left-5 top-[-18px] h-8 w-7 rounded-t-xl bg-[#f6d98d]/70 shadow-[0_0_18px_rgba(246,217,141,0.4)]" /></div>;
+const Dresser: React.FC<{ luxury?: boolean }> = ({ luxury = false }) => <div className={`absolute right-[8%] bottom-[22%] h-24 w-32 rounded-2xl shadow-xl ring-1 ring-white/10 ${luxury ? 'bg-[#4a3318]' : 'bg-[#3a2a21]'}`}><span className="absolute left-3 right-3 top-5 h-px bg-[#d6a84f]/35" /><span className="absolute left-3 right-3 top-12 h-px bg-[#d6a84f]/35" /></div>;
+const Bathtub: React.FC<{ luxury?: boolean }> = ({ luxury = false }) => <div className={`absolute left-[8%] bottom-[18%] h-24 w-52 rounded-b-[40px] rounded-t-[24px] shadow-2xl ring-2 ring-white/25 ${luxury ? 'bg-[#f3e2bf]' : 'bg-[#d8e2eb]'}`}><span className="absolute right-8 top-[-18px] h-8 w-8 rounded-full bg-[#b7d6e8]/80" /></div>;
+const BathroomVanity = () => <div className="absolute right-[9%] bottom-[23%] h-24 w-32 rounded-2xl bg-[#2a3344] shadow-xl ring-1 ring-white/10"><span className="absolute left-6 right-6 top-[-36px] h-16 rounded-full border-4 border-[#d6a84f]/40 bg-white/12" /><span className="absolute left-4 right-4 top-5 h-4 rounded-full bg-[#b7d6e8]/55" /></div>;
+const Shower = () => <div className="absolute left-[44%] top-[18%] h-36 w-24 rounded-t-[34px] border border-white/15 bg-[#9fb6d9]/12 shadow-xl"><span className="absolute left-4 right-4 top-5 h-px bg-white/35" /><span className="absolute right-5 top-8 h-20 w-px bg-white/22" /></div>;
+const TowelRack = () => <div className="absolute right-[8%] top-[20%] h-16 w-28"><span className="absolute left-0 right-0 top-2 h-2 rounded-full bg-[#d6a84f]/70" /><span className="absolute left-5 top-4 h-12 w-16 rounded-b-2xl bg-[#8db8c7]/70" /></div>;
 const CounterCoffee = () => <div className="absolute right-[12%] bottom-[40%] h-10 w-10 rounded-xl bg-[linear-gradient(180deg,#cba15d,#6d4524)] shadow-[0_0_16px_rgba(214,168,79,0.18)] ring-1 ring-white/12" />;
 const WallArt = () => <div className="absolute left-[28%] top-[17%] h-16 w-24 rounded-2xl border-4 border-[#5d4026] bg-[linear-gradient(135deg,#d6a84f66,#273751)] shadow-xl" />;
 const WallMirror = () => <div className="absolute right-[28%] top-[18%] h-16 w-16 rounded-full border-4 border-[#d6a84f]/55 bg-[#9fb6d9]/22 shadow-xl" />;
 const TrophyShelf = () => <div className="absolute left-[31%] top-[30%] h-10 w-28 rounded-xl bg-[#6a4129] shadow-xl"><span className="absolute left-5 top-[-18px] h-6 w-5 rounded-t-full bg-[#d6a84f]" /></div>;
-const TrophyWall = () => <div className="absolute left-[18%] top-[10%] h-12 w-32 rounded-2xl border border-[#d6a84f]/25 bg-[#d6a84f]/10 shadow-xl" />;
 const Aquarium = () => <div className="absolute right-[31%] bottom-[36%] h-14 w-24 rounded-2xl bg-[linear-gradient(180deg,#3aa0c0aa,#103645cc)] shadow-xl ring-2 ring-[#b7d6e8]/55" />;
-const Fireplace: React.FC<{ builtIn?: boolean }> = ({ builtIn = false }) => <div className={`absolute right-[9%] bottom-[22%] h-[72px] w-28 rounded-t-3xl bg-[linear-gradient(180deg,#2b1c22,#120d12)] shadow-2xl ring-2 ring-[#d6a84f]/18 ${builtIn ? 'opacity-85' : ''}`}><span className="absolute bottom-3 left-10 h-10 w-5 rounded-full bg-[#f0c76a] shadow-[0_0_28px_rgba(240,199,106,0.62)]" /></div>;
+const Fireplace = () => <div className="absolute right-[9%] bottom-[22%] h-[72px] w-28 rounded-t-3xl bg-[linear-gradient(180deg,#2b1c22,#120d12)] shadow-2xl ring-2 ring-[#d6a84f]/18"><span className="absolute bottom-3 left-10 h-10 w-5 rounded-full bg-[#f0c76a] shadow-[0_0_28px_rgba(240,199,106,0.62)]" /></div>;
 const Rug = () => <div className="absolute bottom-[9%] left-[24%] right-[18%] h-20 rounded-[50%] bg-[radial-gradient(circle,#a86a7870,#4b223450_62%,transparent_70%)] shadow-[0_18px_28px_rgba(0,0,0,0.22)]" />;
 const BathMat = () => <div className="absolute bottom-[12%] right-[32%] h-12 w-24 rounded-[50%] bg-[#8db8c7]/45 shadow-xl" />;
 const PetBed = () => <div className="absolute bottom-[11%] right-[7%] h-10 w-20 rounded-full bg-[linear-gradient(180deg,#6e4151,#3a2330)] shadow-xl ring-1 ring-[#d6a84f]/16" />;
@@ -274,8 +511,8 @@ const Piano = () => <div className="absolute left-[8%] bottom-[37%] h-14 w-28 ro
 const Jukebox = () => <div className="absolute left-[6%] bottom-[21%] h-24 w-16 rounded-t-[28px] bg-[linear-gradient(180deg,#a86a78,#231422)] shadow-xl ring-2 ring-[#d6a84f]/20" />;
 const Telescope = () => <div className="absolute right-[19%] top-[28%] h-20 w-20"><span className="absolute left-4 top-7 h-3 w-16 -rotate-12 rounded-full bg-[#9fb6d9]" /></div>;
 const SpaCandles = () => <div className="absolute right-[40%] bottom-[18%] flex gap-2">{[10, 14, 12].map((h, i) => <span key={i} className="w-3 rounded-t-sm bg-[#f6d98d] shadow-[0_0_12px_rgba(246,217,141,0.5)]" style={{ height: h }} />)}</div>;
-const GoldFridge = () => <div className="absolute right-[4%] bottom-[33%] h-24 w-14 rounded-xl bg-[linear-gradient(180deg,#d6a84f,#8a632b)] shadow-xl ring-1 ring-white/15" />;
-const DinerBooth = () => <div className="absolute left-[10%] bottom-[30%] h-20 w-36"><span className="absolute bottom-0 left-0 h-10 w-14 rounded-2xl bg-[#7b3149]" /><span className="absolute bottom-0 right-0 h-10 w-14 rounded-2xl bg-[#7b3149]" /></div>;
+const GoldFridge = () => <div className="absolute right-[4%] bottom-[35%] h-28 w-16 rounded-xl bg-[linear-gradient(180deg,#d6a84f,#8a632b)] shadow-xl ring-1 ring-white/15" />;
+const DinerBooth = () => <div className="absolute left-[8%] bottom-[18%] h-20 w-40"><span className="absolute bottom-0 left-0 h-10 w-16 rounded-2xl bg-[#7b3149]" /><span className="absolute bottom-0 right-0 h-10 w-16 rounded-2xl bg-[#7b3149]" /><span className="absolute bottom-8 left-[60px] h-5 w-9 rounded-full bg-[#9b7045]" /></div>;
 const Pet: React.FC<{ kind: string }> = ({ kind }) => <div className="ts-pet-idle absolute bottom-[11%] right-[22%] h-20 w-24"><PetPreview kind={kind} /></div>;
 
 const OutdoorPlanters = () => <><span className="absolute bottom-[24%] left-[18%] h-12 w-12 rounded-t-xl bg-[#6d4329] shadow-lg" /><span className="absolute bottom-[31%] left-[20%] h-10 w-8 rounded-full bg-[#729d58]" /><span className="absolute bottom-[24%] right-[18%] h-12 w-12 rounded-t-xl bg-[#6d4329] shadow-lg" /><span className="absolute bottom-[31%] right-[20%] h-10 w-8 rounded-full bg-[#87aa67]" /></>;
@@ -287,7 +524,7 @@ const Grill = () => <div className="absolute bottom-[22%] right-[29%] h-16 w-20"
 const BbqSmoker = () => <div className="absolute bottom-[21%] left-[28%] h-14 w-28"><span className="absolute bottom-0 h-10 w-full rounded-full bg-[#202735] shadow-xl" /><span className="absolute right-3 top-0 h-8 w-2 rounded bg-[#a9a0b5]" /></div>;
 const OutdoorKitchen = () => <div className="absolute bottom-[22%] right-[8%] h-20 w-40"><span className="absolute bottom-0 h-12 w-full rounded-t-2xl bg-[#25303a] shadow-xl" /><span className="absolute bottom-12 left-2 right-2 h-3 rounded bg-[#d6a84f]" /><span className="absolute bottom-5 left-4 h-6 w-9 rounded bg-[#111827]" /></div>;
 const PatioDiningSet = () => <div className="absolute bottom-[17%] left-[26%] h-20 w-40"><span className="absolute bottom-8 left-12 h-6 w-16 rounded-full bg-[#9b7045]" /><span className="absolute bottom-3 left-1 h-8 w-10 rounded-xl bg-[#31536c]" /><span className="absolute bottom-3 right-1 h-8 w-10 rounded-xl bg-[#31536c]" /></div>;
-const UmbrellaTable = () => <div className="absolute bottom-[22%] left-[45%] h-24 w-24"><span className="absolute left-11 top-5 h-16 w-1.5 bg-[#5d4026]" /><span className="absolute left-1 top-0 h-10 w-22 rounded-t-full bg-[#d6a84f]" /><span className="absolute bottom-0 left-5 h-5 w-14 rounded-full bg-[#9b7045]" /></div>;
+const UmbrellaTable = () => <div className="absolute bottom-[22%] left-[45%] h-24 w-24"><span className="absolute left-11 top-5 h-16 w-1.5 bg-[#5d4026]" /><span className="absolute left-1 top-0 h-10 w-20 rounded-t-full bg-[#d6a84f]" /><span className="absolute bottom-0 left-5 h-5 w-14 rounded-full bg-[#9b7045]" /></div>;
 const LoungeChairs = () => <div className="absolute bottom-[14%] right-[11%] flex gap-2"><span className="h-9 w-16 -rotate-12 rounded-2xl bg-[#8db8c7]/70 shadow-xl" /><span className="h-9 w-16 rotate-12 rounded-2xl bg-[#8db8c7]/70 shadow-xl" /></div>;
 const FenceLine = () => <div className="absolute inset-x-0 bottom-[27%] flex justify-around opacity-75">{Array.from({ length: 12 }).map((_, i) => <span key={i} className="h-10 w-2 rounded bg-[#eadfcb]/55" />)}</div>;
 const GardenPath = () => <div className="absolute bottom-[10%] left-1/2 h-[32%] w-28 -translate-x-1/2 rounded-t-[80%] bg-[repeating-linear-gradient(180deg,#b8a273_0_14px,#8d7042_14px_28px)] opacity-75" />;
