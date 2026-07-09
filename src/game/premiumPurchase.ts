@@ -9,8 +9,7 @@ import type {
 
 type PurchaseModule = typeof import('capacitor-plugin-cdv-purchase');
 
-export const FULL_ADVENTURE_PRODUCT_ID =
-  import.meta.env.VITE_FULL_ADVENTURE_PRODUCT_ID?.trim() || 'full_adventure';
+export const FULL_ADVENTURE_PRODUCT_ID = 'full_adventure';
 
 const PURCHASE_VALIDATOR_URL =
   import.meta.env.VITE_PURCHASE_VALIDATOR_URL?.trim() || '';
