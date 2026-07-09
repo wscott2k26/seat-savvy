@@ -7,6 +7,7 @@ import React, {
 } from 'react';
 import Avatar from './Avatar';
 import { useGame } from './GameProvider';
+import { characterLook } from './characterLooks';
 
 interface DragPayload {
   charId: string;
@@ -48,7 +49,7 @@ export const useDrag = () => {
 export const DragLayer: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { placeCharacter, playSound, progress, unplace } = useGame();
+  const { placeCharacter, playSound, unplace } = useGame();
   const floatRef = useRef<HTMLDivElement>(null);
   const payloadRef = useRef<DragPayload | null>(null);
   const [dragging, setDragging] = useState<DragPayload | null>(null);
@@ -110,10 +111,12 @@ export const DragLayer: React.FC<{ children: React.ReactNode }> = ({
     [move, endDrag, playSound],
   );
 
+  const draggingLook = dragging ? characterLook(dragging.charId, dragging.hue) : null;
+
   return (
     <Ctx.Provider value={{ startDrag, draggingId: dragging?.charId ?? null }}>
       {children}
-      {dragging && (
+      {dragging && draggingLook && (
         <div
           ref={floatRef}
           className="pointer-events-none fixed z-[100] -translate-x-1/2 -translate-y-1/2"
@@ -124,7 +127,7 @@ export const DragLayer: React.FC<{ children: React.ReactNode }> = ({
               hue={dragging.hue}
               mood="happy"
               size={64}
-              {...progress.customization.characterAvatar}
+              {...draggingLook}
             />
           </div>
         </div>
