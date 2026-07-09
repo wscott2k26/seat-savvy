@@ -125,101 +125,18 @@ export const SHOP_CATEGORY_LABELS: Record<ShopCategory, string> = {
 };
 
 export const HOME_UPGRADES: HomeUpgrade[] = [
-  {
-    id: 'tiny-studio',
-    label: 'Tiny Studio',
-    description: 'One humble starter room with a rainy window and just enough space to dream.',
-    cost: 0,
-    size: 'tiny',
-  },
-  {
-    id: 'small-trailer',
-    label: 'Cozy Trailer',
-    description: 'A cute road-home with an awning, kitchenette, booth seat, and warmer character.',
-    cost: 240,
-    starsRequired: 6,
-    size: 'small',
-  },
-  {
-    id: 'starter-apartment',
-    label: 'Starter Apartment',
-    description: 'A brighter two-zone apartment with a real bedroom corner and tiny kitchen wall.',
-    cost: 420,
-    starsRequired: 12,
-    size: 'small',
-  },
-  {
-    id: 'suburban-house',
-    label: 'Suburban House',
-    description: 'A proper house glow-up with yard space, living room, bedroom, and kitchen nook.',
-    cost: 760,
-    starsRequired: 24,
-    size: 'medium',
-  },
-  {
-    id: 'city-apartment',
-    label: 'City Apartment',
-    description: 'Storm-blue skyline views, cleaner furniture zones, and room for a reading nook.',
-    cost: 920,
-    starsRequired: 32,
-    size: 'medium',
-  },
-  {
-    id: 'cozy-cabin',
-    label: 'Forest Cabin',
-    description: 'Wood beams, fireplace bones, mountain-rain windows, and a cozy lodge layout.',
-    cost: 1180,
-    starsRequired: 44,
-    size: 'medium',
-  },
-  {
-    id: 'beach-cottage',
-    label: 'Beach Cottage',
-    description: 'A breezy cottage with porch energy, ocean air, and soft sandy rooms.',
-    cost: 1460,
-    starsRequired: 56,
-    size: 'large',
-  },
-  {
-    id: 'lake-house',
-    label: 'Lake House',
-    description: 'Quiet water, warm wood, a deck outside, and wide windows inside.',
-    cost: 1780,
-    starsRequired: 68,
-    size: 'large',
-  },
-  {
-    id: 'city-loft',
-    label: 'City Loft',
-    description: 'High ceilings, big windows, workstation space, and a midnight city glow.',
-    cost: 2120,
-    starsRequired: 82,
-    size: 'large',
-  },
-  {
-    id: 'garden-villa',
-    label: 'Garden Villa',
-    description: 'A peaceful premium-style villa with greenhouse windows and outdoor garden space.',
-    cost: 2480,
-    starsRequired: 96,
-    size: 'large',
-  },
-  {
-    id: 'luxury-penthouse',
-    label: 'Luxury Penthouse',
-    description: 'Full Adventure skyline luxury with gold accents, balcony vibes, and trophy space.',
-    cost: 3000,
-    premium: true,
-    size: 'premium',
-  },
-  {
-    id: 'dream-estate',
-    label: 'Dream Estate',
-    description: 'The biggest Full Adventure home: driveway, pool deck, grand room, and flex energy.',
-    cost: 4200,
-    premium: true,
-    size: 'premium',
-  },
+  { id: 'tiny-studio', label: 'Tiny Studio', description: 'One humble starter room with a rainy window and just enough space to dream.', cost: 0, size: 'tiny' },
+  { id: 'small-trailer', label: 'Cozy Trailer', description: 'A cute road-home with an awning, kitchenette, booth seat, and warmer character.', cost: 240, starsRequired: 6, size: 'small' },
+  { id: 'starter-apartment', label: 'Starter Apartment', description: 'A brighter two-zone apartment with a real bedroom corner and tiny kitchen wall.', cost: 420, starsRequired: 12, size: 'small' },
+  { id: 'suburban-house', label: 'Suburban House', description: 'A proper house glow-up with yard space, living room, bedroom, and kitchen nook.', cost: 760, starsRequired: 24, size: 'medium' },
+  { id: 'city-apartment', label: 'City Apartment', description: 'Storm-blue skyline views, cleaner furniture zones, and room for a reading nook.', cost: 920, starsRequired: 32, size: 'medium' },
+  { id: 'cozy-cabin', label: 'Forest Cabin', description: 'Wood beams, fireplace bones, mountain-rain windows, and a cozy lodge layout.', cost: 1180, starsRequired: 44, size: 'medium' },
+  { id: 'beach-cottage', label: 'Beach Cottage', description: 'A breezy cottage with porch energy, ocean air, and soft sandy rooms.', cost: 1460, starsRequired: 56, size: 'large' },
+  { id: 'lake-house', label: 'Lake House', description: 'Quiet water, warm wood, a deck outside, and wide windows inside.', cost: 1780, starsRequired: 68, size: 'large' },
+  { id: 'city-loft', label: 'City Loft', description: 'High ceilings, big windows, workstation space, and a midnight city glow.', cost: 2120, starsRequired: 82, size: 'large' },
+  { id: 'garden-villa', label: 'Garden Villa', description: 'A peaceful premium-style villa with greenhouse windows and outdoor garden space.', cost: 2480, starsRequired: 96, size: 'large' },
+  { id: 'luxury-penthouse', label: 'Luxury Penthouse', description: 'Full Adventure skyline luxury with gold accents, balcony vibes, and trophy space.', cost: 3000, premium: true, size: 'premium' },
+  { id: 'dream-estate', label: 'Dream Estate', description: 'The biggest Full Adventure home: driveway, pool deck, grand room, and flex energy.', cost: 4200, premium: true, size: 'premium' },
 ];
 
 export const SHOP_ITEMS: ShopItem[] = [
@@ -288,8 +205,23 @@ export const SHOP_ITEMS: ShopItem[] = [
   { id: 'flower-planter', label: 'Flower Planter', description: 'Adds life to the front step.', category: 'outdoor', kind: 'decor', cost: 220, preview: 'plant' },
   { id: 'mailbox', label: 'Cute Mailbox', description: 'A tiny flex by the driveway.', category: 'outdoor', kind: 'decor', cost: 180, preview: 'art' },
   { id: 'fire-pit', label: 'Fire Pit', description: 'Outdoor glow for cabin and lake nights.', category: 'outdoor', kind: 'decor', cost: 620, starsRequired: 42, preview: 'fire' },
+  { id: 'grill', label: 'Backyard Grill', description: 'The first real cookout upgrade for yards and decks.', category: 'outdoor', kind: 'decor', cost: 420, starsRequired: 18, preview: 'fire' },
+  { id: 'bbq-smoker', label: 'BBQ Smoker', description: 'Slow-cooked backyard boss energy.', category: 'outdoor', kind: 'decor', cost: 760, starsRequired: 46, preview: 'fire' },
+  { id: 'outdoor-kitchen', label: 'Outdoor Kitchen', description: 'Counters, grill space, and big patio flex.', category: 'outdoor', kind: 'decor', cost: 1100, starsRequired: 66, preview: 'table' },
+  { id: 'patio-dining-set', label: 'Patio Dining Set', description: 'A table for outside meals after puzzle wins.', category: 'outdoor', kind: 'decor', cost: 620, starsRequired: 34, preview: 'table' },
+  { id: 'umbrella-table', label: 'Umbrella Table', description: 'Shade and snacks for sunny cottage days.', category: 'outdoor', kind: 'decor', cost: 520, starsRequired: 30, preview: 'table' },
+  { id: 'lounge-chairs', label: 'Lounge Chairs', description: 'Relaxing seats for lake, villa, and pool homes.', category: 'outdoor', kind: 'decor', cost: 680, starsRequired: 44, preview: 'chair' },
+  { id: 'fence-style', label: 'Fence Style', description: 'Frames the yard and makes the outside feel owned.', category: 'outdoor', kind: 'decor', cost: 500, starsRequired: 26, preview: 'art' },
+  { id: 'garden-path', label: 'Garden Path', description: 'A clean walkway from curb to front door.', category: 'outdoor', kind: 'decor', cost: 360, starsRequired: 20, preview: 'plant' },
+  { id: 'garden-box', label: 'Garden Box', description: 'Grow herbs, flowers, and cozy yard pride.', category: 'outdoor', kind: 'decor', cost: 440, starsRequired: 24, preview: 'plant' },
+  { id: 'porch-swing', label: 'Porch Swing', description: 'Classic front-porch calm for cottages and cabins.', category: 'outdoor', kind: 'decor', cost: 700, starsRequired: 38, preview: 'chair' },
+  { id: 'gazebo', label: 'Gazebo', description: 'A peaceful premium courtyard centerpiece.', category: 'outdoor', kind: 'decor', cost: 1300, starsRequired: 76, preview: 'art' },
+  { id: 'outdoor-tv', label: 'Outdoor TV', description: 'Big-game patio energy without leaving the crib.', category: 'outdoor', kind: 'decor', cost: 980, starsRequired: 60, preview: 'tv' },
+  { id: 'backyard-pool', label: 'Backyard Pool', description: 'The full backyard flex starts here.', category: 'outdoor', kind: 'decor', cost: 1800, premium: true, preview: 'ocean' },
+  { id: 'pool-deck', label: 'Pool Deck', description: 'Turns the pool into a whole resort moment.', category: 'outdoor', kind: 'decor', cost: 1400, premium: true, preview: 'floor' },
   { id: 'hot-tub', label: 'Hot Tub', description: 'Premium outdoor relaxation. Big boss backyard.', category: 'outdoor', kind: 'decor', cost: 1400, premium: true, preview: 'ocean' },
   { id: 'pool-lights', label: 'Pool Lights', description: 'Endgame estate sparkle.', category: 'outdoor', kind: 'decor', cost: 1600, premium: true, preview: 'spark' },
+  { id: 'outside-string-lights', label: 'Outdoor String Lights', description: 'Warm backyard lights for decks, patios, and pool nights.', category: 'outdoor', kind: 'decor', cost: 540, starsRequired: 28, preview: 'spark' },
 
   { id: 'plum-wallpaper', label: 'Plum Wallpaper', description: 'Darker walls with soft depth.', category: 'wallpapers', kind: 'wallpaper', cost: 200, preview: 'plum' },
   { id: 'forest-wallpaper', label: 'Forest Wallpaper', description: 'Calm green walls.', category: 'wallpapers', kind: 'wallpaper', starsRequired: 20, preview: 'forest' },
@@ -312,69 +244,13 @@ export const SHOP_ITEMS: ShopItem[] = [
 ];
 
 export const DAILY_MISSIONS: MissionDefinition[] = [
-  {
-    id: 'solve-3',
-    label: 'Solve 3 puzzles',
-    description: 'Finish any three seating stories today.',
-    target: 3,
-    rewardCoins: 90,
-    rewardXp: 70,
-    progress: (daily) => daily.solved,
-  },
-  {
-    id: 'earn-6-stars',
-    label: 'Earn 6 stars',
-    description: 'Collect six stars from today’s solves.',
-    target: 6,
-    rewardCoins: 80,
-    rewardXp: 80,
-    progress: (daily) => daily.stars,
-  },
-  {
-    id: 'no-hints',
-    label: 'Solve without hints',
-    description: 'Finish one puzzle without using a hint.',
-    target: 1,
-    rewardCoins: 70,
-    rewardXp: 60,
-    progress: (daily) => daily.noHintSolves,
-  },
-  {
-    id: 'buy-one',
-    label: 'Buy one item',
-    description: 'Pick up something cozy from the shop.',
-    target: 1,
-    rewardCoins: 50,
-    rewardXp: 50,
-    progress: (daily) => daily.boughtItems,
-  },
-  {
-    id: 'adopt-pet',
-    label: 'Adopt a pet',
-    description: 'Choose or unlock a companion for your home.',
-    target: 1,
-    rewardCoins: 70,
-    rewardXp: 60,
-    progress: (daily) => (daily.petAdopted ? 1 : 0),
-  },
-  {
-    id: 'visit-home',
-    label: 'Visit home',
-    description: 'Stop by your room and check the view.',
-    target: 1,
-    rewardCoins: 40,
-    rewardXp: 40,
-    progress: (daily) => (daily.visitedHome ? 1 : 0),
-  },
-  {
-    id: 'customize',
-    label: 'Customize character',
-    description: 'Change one avatar or style choice.',
-    target: 1,
-    rewardCoins: 40,
-    rewardXp: 40,
-    progress: (daily) => (daily.customized ? 1 : 0),
-  },
+  { id: 'solve-3', label: 'Solve 3 puzzles', description: 'Finish any three seating stories today.', target: 3, rewardCoins: 90, rewardXp: 70, progress: (daily) => daily.solved },
+  { id: 'earn-6-stars', label: 'Earn 6 stars', description: 'Collect six stars from today’s solves.', target: 6, rewardCoins: 80, rewardXp: 80, progress: (daily) => daily.stars },
+  { id: 'no-hints', label: 'Solve without hints', description: 'Finish one puzzle without using a hint.', target: 1, rewardCoins: 70, rewardXp: 60, progress: (daily) => daily.noHintSolves },
+  { id: 'buy-one', label: 'Buy one item', description: 'Pick up something cozy from the shop.', target: 1, rewardCoins: 50, rewardXp: 50, progress: (daily) => daily.boughtItems },
+  { id: 'adopt-pet', label: 'Adopt a pet', description: 'Choose or unlock a companion for your home.', target: 1, rewardCoins: 70, rewardXp: 60, progress: (daily) => (daily.petAdopted ? 1 : 0) },
+  { id: 'visit-home', label: 'Visit home', description: 'Stop by your room and check the view.', target: 1, rewardCoins: 40, rewardXp: 40, progress: (daily) => (daily.visitedHome ? 1 : 0) },
+  { id: 'customize', label: 'Customize character', description: 'Change one avatar or style choice.', target: 1, rewardCoins: 40, rewardXp: 40, progress: (daily) => (daily.customized ? 1 : 0) },
 ];
 
 export const ACHIEVEMENTS: AchievementDefinition[] = [
@@ -400,37 +276,12 @@ export function todayKey(): string {
 }
 
 export function freshDaily(date = todayKey()): DailyProgress {
-  return {
-    date,
-    claimedMissions: [],
-    solved: 0,
-    stars: 0,
-    noHintSolves: 0,
-    boughtItems: 0,
-    petAdopted: false,
-    visitedHome: false,
-    customized: false,
-  };
+  return { date, claimedMissions: [], solved: 0, stars: 0, noHintSolves: 0, boughtItems: 0, petAdopted: false, visitedHome: false, customized: false };
 }
 
 export const DEFAULT_LIFE_PROGRESS: LifeProgress = {
-  ownedItems: [
-    'old-couch',
-    'starter-plant',
-    'small-table',
-    'rain-window',
-    'studio-wallpaper',
-    'worn-floor',
-    'cat-pet',
-  ],
-  equippedDecor: [
-    'old-couch',
-    'starter-plant',
-    'small-table',
-    'rain-window',
-    'studio-wallpaper',
-    'worn-floor',
-  ],
+  ownedItems: ['old-couch', 'starter-plant', 'small-table', 'rain-window', 'studio-wallpaper', 'worn-floor', 'cat-pet'],
+  equippedDecor: ['old-couch', 'starter-plant', 'small-table', 'rain-window', 'studio-wallpaper', 'worn-floor'],
   selectedPet: 'cat-pet',
   ownedHomes: ['tiny-studio'],
   homeId: 'tiny-studio',
@@ -442,30 +293,13 @@ export const DEFAULT_LIFE_PROGRESS: LifeProgress = {
 export function normalizeLife(life?: Partial<LifeProgress>): LifeProgress {
   const date = todayKey();
   const incomingDaily = life?.daily;
-  const daily =
-    incomingDaily?.date === date
-      ? { ...freshDaily(date), ...incomingDaily }
-      : {
-          ...freshDaily(date),
-          claimedDailyDate: incomingDaily?.claimedDailyDate,
-        };
-
+  const daily = incomingDaily?.date === date ? { ...freshDaily(date), ...incomingDaily } : { ...freshDaily(date), claimedDailyDate: incomingDaily?.claimedDailyDate };
   return {
     ...DEFAULT_LIFE_PROGRESS,
     ...(life ?? {}),
-    ownedItems: unique([
-      ...DEFAULT_LIFE_PROGRESS.ownedItems,
-      ...(life?.ownedItems ?? []),
-    ]),
-    equippedDecor: unique([
-      ...DEFAULT_LIFE_PROGRESS.equippedDecor,
-      ...(life?.equippedDecor ?? []),
-    ]),
-    ownedHomes: unique([
-      'tiny-studio',
-      life?.homeId ?? DEFAULT_LIFE_PROGRESS.homeId,
-      ...(life?.ownedHomes ?? []),
-    ]),
+    ownedItems: unique([...DEFAULT_LIFE_PROGRESS.ownedItems, ...(life?.ownedItems ?? [])]),
+    equippedDecor: unique([...DEFAULT_LIFE_PROGRESS.equippedDecor, ...(life?.equippedDecor ?? [])]),
+    ownedHomes: unique(['tiny-studio', life?.homeId ?? DEFAULT_LIFE_PROGRESS.homeId, ...(life?.ownedHomes ?? [])]),
     claimedAchievements: unique(life?.claimedAchievements ?? []),
     daily,
   };
@@ -489,14 +323,9 @@ export function nextLevelRewardLabel(level: number): string {
   return level % 2 === 0 ? '+1 hint' : '+75 coins';
 }
 
-export function canOwnItem(
-  item: ShopItem,
-  progress: { coins: number; premium: boolean; stars: Record<string, number> },
-): boolean {
+export function canOwnItem(item: ShopItem, progress: { coins: number; premium: boolean; stars: Record<string, number> }): boolean {
   if (item.premium) return progress.premium;
-  if (item.starsRequired && totalStars(progress.stars) < item.starsRequired) {
-    return false;
-  }
+  if (item.starsRequired && totalStars(progress.stars) < item.starsRequired) return false;
   return progress.coins >= (item.cost ?? 0);
 }
 
