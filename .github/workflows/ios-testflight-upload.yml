@@ -1,6 +1,6 @@
 name: SeatSavvy TestFlight Upload
 
-# Manual upload plus a workflow-file push trigger so this 1.0.1 fix build can be kicked off from GitHub.
+# Manual upload plus a workflow-file push trigger so this 1.0.1 challenge unlock build can be kicked off from GitHub.
 on:
   workflow_dispatch:
   push:
@@ -16,6 +16,56 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+
+      - name: Apply challenge unlock hotfix
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          path = Path('src/game/GameProvider.tsx')
+          text = path.read_text()
+
+          premium_import = """import {
+  FULL_ADVENTURE_PRODUCT_ID,
+  onPremiumOwned,
+  purchaseFullAdventure,
+  restoreFullAdventure,
+  type PremiumPurchaseResult,
+} from './premiumPurchase';"""
+          replacement_import = premium_import + """
+import { difficultyAccessFor, readPreferredMode } from './difficultyProgress';"""
+          if "./difficultyProgress" not in text:
+              text = text.replace(premium_import, replacement_import)
+
+          old = """function canStartLevel(id: number, progress: Progress): boolean {
+  if (id === 1) return true;
+  if (id > FREE_LEVELS && !progress.premium) return false;
+  return progress.completed.includes(id - 1);
+}"""
+          new = """function isChallengeLevelForMode(level: Level, mode: PlayMode): boolean {
+  if (mode === 'medium') return level.characters.length === 15;
+  if (mode === 'hard') return level.characters.length >= 20;
+  return false;
+}
+
+function canStartLevel(id: number, progress: Progress): boolean {
+  if (id === 1) return true;
+  const level = levelById(id);
+  if (!level) return false;
+
+  if (id > FREE_LEVELS && !progress.premium) {
+    const preferredMode = readPreferredMode();
+    const challengeAccess = difficultyAccessFor(preferredMode, id, progress.premium);
+    return isChallengeLevelForMode(level, preferredMode) && challengeAccess.unlocked;
+  }
+
+  return progress.completed.includes(id - 1);
+}"""
+          if old not in text:
+              raise SystemExit('Expected canStartLevel block not found; refusing to build stale unlock logic.')
+          text = text.replace(old, new)
+          path.write_text(text)
+          PY
 
       - name: Show Xcode version
         run: |
