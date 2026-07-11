@@ -5,18 +5,24 @@ import Avatar from './Avatar';
 import ClueIcon from './ClueIcon';
 import { clueIcon, clueText } from './constraints';
 import { characterLook } from './characterLooks';
+import type { Constraint } from './types';
 
 type TrayCharacter = NonNullable<ReturnType<typeof useGame>['level']>['characters'][number];
+type PlayMode = ReturnType<typeof useGame>['playMode'];
 
 function makeSeed(levelId: number, count: number): number {
   return (levelId * 2654435761 + count * 1013904223) >>> 0;
+}
+
+function nextRandomState(state: number): number {
+  return (Math.imul(state, 1664525) + 1013904223) >>> 0;
 }
 
 function shuffledTray(characters: TrayCharacter[], levelId: number): TrayCharacter[] {
   const shuffled = characters.slice();
   let state = makeSeed(levelId, characters.length) || 1;
   const next = () => {
-    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    state = nextRandomState(state);
     return state / 0x100000000;
   };
 
@@ -39,10 +45,51 @@ function shuffledTray(characters: TrayCharacter[], levelId: number): TrayCharact
   return shuffled;
 }
 
+function clueSeed(characterId: string, levelId: number): number {
+  let state = makeSeed(levelId + 17, characterId.length + 5);
+  for (let i = 0; i < characterId.length; i += 1) {
+    state = (Math.imul(state, 33) + characterId.charCodeAt(i)) >>> 0;
+  }
+  return state || 1;
+}
+
+function shuffledClues(clues: Constraint[], characterId: string, levelId: number) {
+  const shuffled = clues.slice();
+  let state = clueSeed(characterId, levelId);
+  const next = () => {
+    state = nextRandomState(state);
+    return state / 0x100000000;
+  };
+
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(next() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  return shuffled;
+}
+
+function clueIconLimit(mode: PlayMode, seatCount: number): number {
+  if (seatCount >= 24) return 0; // Expert: text only.
+  if (mode === 'hard') return 1;
+  if (mode === 'medium') return 2;
+  return 3;
+}
+
+function clueBadge(iconLimit: number): string {
+  if (iconLimit <= 0) return 'Text clues';
+  if (iconLimit === 1) return '1 icon';
+  if (iconLimit === 2) return '2 icons';
+  return 'Mixed clues';
+}
+
 const CharacterTray: React.FC = () => {
-  const { level, placement, violations } = useGame();
+  const { level, placement, playMode, violations } = useGame();
   const { startDrag, draggingId } = useDrag();
   if (!level) return null;
+
+  const iconLimit = clueIconLimit(playMode, level.seats.length);
+  const maxVisibleClues = iconLimit <= 1 ? 4 : 3;
 
   const nameOf = (id: string) =>
     level.characters.find((c) => c.id === id)?.name ?? '?';
@@ -69,7 +116,7 @@ const CharacterTray: React.FC = () => {
             : 'Everyone is seated!'}
         </p>
         <span className="rounded-full border border-[#d6a84f]/22 bg-[#d6a84f]/12 px-2 py-1 text-[10px] font-extrabold text-[#f6d98d]">
-          Mixed clues
+          {clueBadge(iconLimit)}
         </span>
       </div>
       <div className="flex gap-2.5 overflow-x-auto pb-2 pr-6 snap-x snap-mandatory">
@@ -80,6 +127,7 @@ const CharacterTray: React.FC = () => {
         )}
         {unplaced.map((c) => {
           const look = characterLook(c.id, c.hue);
+          const visibleClues = shuffledClues(c.constraints, c.id, level.id).slice(0, maxVisibleClues);
           return (
             <div
               key={c.id}
@@ -109,21 +157,28 @@ const CharacterTray: React.FC = () => {
                 {c.trait}
               </p>
               <div className="character-card-clues mt-1 grid w-full gap-1 text-[#d9cda9]">
-                {c.constraints.slice(0, 3).map((cl, i) => (
-                  <span
-                    key={i}
-                    title={clueText(cl, nameOf)}
-                    className="character-clue-row flex items-start gap-1 rounded-xl border border-white/10 bg-[#050816]/45 px-1.5 py-1 text-[8px] font-bold leading-tight text-[#eadfcb] shadow-inner"
-                  >
-                    <span className="mt-0.5 shrink-0">
-                      <ClueIcon name={clueIcon(cl)} size={11} />
+                {visibleClues.map((cl, i) => {
+                  const showIcon = i < iconLimit;
+                  return (
+                    <span
+                      key={i}
+                      title={clueText(cl, nameOf)}
+                      className={`character-clue-row flex items-start gap-1 rounded-xl border border-white/10 bg-[#050816]/45 px-1.5 py-1 text-[8px] font-bold leading-tight text-[#eadfcb] shadow-inner ${
+                        showIcon ? '' : 'pl-2'
+                      }`}
+                    >
+                      {showIcon && (
+                        <span className="mt-0.5 shrink-0">
+                          <ClueIcon name={clueIcon(cl)} size={11} />
+                        </span>
+                      )}
+                      <span className="character-clue-text">{clueText(cl, nameOf)}</span>
                     </span>
-                    <span className="character-clue-text">{clueText(cl, nameOf)}</span>
-                  </span>
-                ))}
-                {c.constraints.length > 3 && (
+                  );
+                })}
+                {c.constraints.length > maxVisibleClues && (
                   <span className="rounded-xl border border-white/10 bg-white/8 px-1.5 py-0.5 text-center text-[8px] font-bold text-[#a9a0b5]">
-                    +{c.constraints.length - 3} more
+                    +{c.constraints.length - maxVisibleClues} more
                   </span>
                 )}
               </div>
