@@ -8,6 +8,7 @@ import StoryDifficultyModal from './StoryDifficultyModal';
 import { SettingsModal, PremiumModal } from './Panels';
 import { GAME_THEME_BACKGROUNDS } from './customization';
 import { AccountModal } from './AccountModal';
+import { recordDifficultyCompletion } from './difficultyProgress';
 import {
   formatClock,
   playModeLabel,
@@ -122,6 +123,7 @@ const PlayScreen: React.FC = () => {
       const celebrationIndex =
         ((level?.id ?? 0) + levelStats.moves + Date.now()) % CELEBRATIONS.length;
       setCelebration(CELEBRATIONS[celebrationIndex]);
+      if (level) recordDifficultyCompletion(playMode, level.id);
       completeLevelRef.current();
       if (winTimer.current !== null) {
         window.clearTimeout(winTimer.current);
@@ -132,7 +134,7 @@ const PlayScreen: React.FC = () => {
         winTimer.current = null;
       }, 1550);
     }
-  }, [solved, level?.id, levelStats.moves]);
+  }, [solved, level, playMode, levelStats.moves]);
 
   if (!level) return null;
 
@@ -207,6 +209,7 @@ const PlayScreen: React.FC = () => {
       {showStory && (
         <StoryDifficultyModal
           level={level}
+          premium={progress.premium}
           onStart={(mode: PlayMode) => {
             beginLevelRun(mode);
             setClockNow(Date.now());
