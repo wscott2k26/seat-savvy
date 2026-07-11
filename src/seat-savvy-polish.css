@@ -1,0 +1,155 @@
+/* SeatSavvy 1.0.1 polish fixes
+   - Make first-level clue cards easier to read on narrow screens
+   - Make home upgrade previews visually distinct in the catalog
+*/
+
+[data-tray] .character-card {
+  width: 124px !important;
+  min-height: 142px;
+}
+
+[data-tray] .character-card-clues {
+  gap: 0.22rem;
+}
+
+[data-tray] .character-clue-row {
+  min-height: 24px;
+  padding: 0.22rem 0.34rem;
+  font-size: 8px;
+  line-height: 1.05;
+}
+
+[data-tray] .character-clue-text {
+  -webkit-line-clamp: 2;
+}
+
+[data-tray]::after {
+  content: 'swipe';
+  position: absolute;
+  right: calc(var(--safe-area-right) + 0.65rem);
+  bottom: calc(var(--safe-area-bottom) + 1.55rem);
+  pointer-events: none;
+  border: 1px solid rgba(246, 217, 141, 0.18);
+  border-radius: 999px;
+  background: rgba(5, 8, 22, 0.72);
+  color: rgba(246, 217, 141, 0.82);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.45rem;
+  text-transform: uppercase;
+}
+
+@media (max-width: 380px), (max-height: 740px) {
+  [data-tray] .character-card {
+    width: 116px !important;
+    min-height: 136px;
+  }
+
+  [data-tray] .character-avatar svg {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  [data-tray] .character-clue-row {
+    min-height: 22px;
+    font-size: 7.5px;
+  }
+}
+
+/* Home upgrade catalog thumbnails. The underlying MiniRoom component is intentionally
+   simple, so these nth-child treatments give each upgrade a unique at-a-glance look. */
+.safe-screen main > section:last-child .mt-3.space-y-3 > button [class~='h-16'][class~='w-20'] > div {
+  isolation: isolate;
+}
+
+.safe-screen main > section:last-child .mt-3.space-y-3 > button [class~='h-16'][class~='w-20'] > div::before,
+.safe-screen main > section:last-child .mt-3.space-y-3 > button [class~='h-16'][class~='w-20'] > div::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.safe-screen main > section:last-child .mt-3.space-y-3 > button:nth-child(1) [class~='h-16'][class~='w-20'] > div {
+  background: linear-gradient(135deg, #1b2436, #3b445d 55%, #17111f) !important;
+}
+
+.safe-screen main > section:last-child .mt-3.space-y-3 > button:nth-child(2) [class~='h-16'][class~='w-20'] > div {
+  background: repeating-linear-gradient(90deg, #2c3443 0 16px, #3e4553 16px 32px) !important;
+}
+.safe-screen main > section:last-child .mt-3.space-y-3 > button:nth-child(2) [class~='h-16'][class~='w-20'] > div::after {
+  left: 10%; right: 10%; bottom: 4px; height: 9px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 18% 50%, #050816 0 5px, transparent 6px), radial-gradient(circle at 82% 50%, #050816 0 5px, transparent 6px), linear-gradient(90deg, #c7a26b, #7b5f42);
+}
+
+.safe-screen main > section:last-child .mt-3.space-y-3 > button:nth-child(3) [class~='h-16'][class~='w-20'] > div {
+  background: linear-gradient(135deg, #101827, #253650 55%, #0b1020) !important;
+}
+.safe-screen main > section:last-child .mt-3.space-y-3 > button:nth-child(3) [class~='h-16'][class~='w-20'] > div::after {
+  right: 8px; top: 7px; width: 20px; height: 38px;
+  border-radius: 8px;
+  background: repeating-linear-gradient(180deg, rgba(159,182,217,.7) 0 8px, rgba(5,8,22,.38) 8px 10px);
+}
+
+.safe-screen main > section:last-child .mt-3.space-y-3 > button:nth-child(4) [class~='h-16'][class~='w-20'] > div {
+  background: linear-gradient(180deg, #2d4764 0 42%, #537044 42% 100%) !important;
+}
+.safe-screen main > section:last-child .mt-3.space-y-3 > button:nth-child(4) [class~='h-16'][class~='w-20'] > div::before {
+  left: 18px; bottom: 14px; width: 42px; height: 26px;
+  border-radius: 8px 8px 5px 5px;
+  background: linear-gradient(180deg, #9c6f50, #5e3f2a);
+}
+.safe-screen main > section:last-child .mt-3.space-y-3 > button:nth-child(4) [class~='h-16'][class~='w-20'] > div::after {
+  left: 14px; bottom: 38px; width: 50px; height: 22px;
+  background: #402719;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.safe-screen main > section:last-child .mt-3.space-y-3 > button:nth-child(5) [class~='h-16'][class~='w-20'] > div,
+.safe-screen main > section:last-child .mt-3.space-y-3 > button:nth-child(9) [class~='h-16'][class~='w-20'] > div,
+.safe-screen main > section:last-child .mt-3.space-y-3 > button:nth-child(11) [class~='h-16'][class~='w-20'] > div {
+  background: linear-gradient(180deg, #071025, #1f3760 60%, #050816) !important;
+}
+.safe-screen main > section:last-child .mt-3.space-y-3 > button:nth-child(5) [class~='h-16'][class~='w-20'] > div::after,
+.safe-screen main > section:last-child .mt-3.space-y-3 > button:nth-child(9) [class~='h-16'][class~='w-20'] > div::after,
+.safe-screen main > section:last-child .mt-3.space-y-3 > button:nth-child(11) [class~='h-16'][class~='w-20'] > div::after {
+  left: 7px; right: 7px; bottom: 8px; height: 34px;
+  background: repeating-linear-gradient(90deg, #050816 0 8px, #101827 8px 13px);
+  box-shadow: inset 0 14px 0 rgba(159, 182, 217, 0.18);
+}
+
+.safe-screen main > section:last-child .mt-3.space-y-3 > button:nth-child(6) [class~='h-16'][class~='w-20'] > div {
+  background: repeating-linear-gradient(90deg, #6b4426 0 14px, #4a2f1c 14px 28px) !important;
+}
+.safe-screen main > section:last-child .mt-3.space-y-3 > button:nth-child(6) [class~='h-16'][class~='w-20'] > div::after {
+  left: 9px; right: 9px; top: 7px; height: 18px;
+  border-radius: 999px;
+  background: #2d1c12;
+}
+
+.safe-screen main > section:last-child .mt-3.space-y-3 > button:nth-child(7) [class~='h-16'][class~='w-20'] > div {
+  background: linear-gradient(180deg, #98c7d9 0 45%, #398aa4 45% 65%, #ccb27a 65% 100%) !important;
+}
+.safe-screen main > section:last-child .mt-3.space-y-3 > button:nth-child(8) [class~='h-16'][class~='w-20'] > div {
+  background: linear-gradient(180deg, #516979 0 48%, #3c6870 48% 66%, #26382f 66% 100%) !important;
+}
+.safe-screen main > section:last-child .mt-3.space-y-3 > button:nth-child(10) [class~='h-16'][class~='w-20'] > div {
+  background: linear-gradient(180deg, #5b7a8d 0 45%, #9bb38f 45% 62%, #5f8c4c 62% 100%) !important;
+}
+.safe-screen main > section:last-child .mt-3.space-y-3 > button:nth-child(10) [class~='h-16'][class~='w-20'] > div::after {
+  inset: 10px 8px auto auto; width: 24px; height: 24px;
+  border-radius: 999px;
+  background: #6b8461;
+  box-shadow: -28px 15px 0 #40543e, -10px 28px 0 #526443;
+}
+.safe-screen main > section:last-child .mt-3.space-y-3 > button:nth-child(12) [class~='h-16'][class~='w-20'] > div {
+  background: linear-gradient(180deg, #0b1530 0 42%, #304f7a 42% 58%, #4f7142 58% 100%) !important;
+}
+.safe-screen main > section:last-child .mt-3.space-y-3 > button:nth-child(12) [class~='h-16'][class~='w-20'] > div::after {
+  left: 16px; right: 16px; bottom: 5px; height: 16px;
+  border-radius: 999px;
+  background: rgba(47, 160, 198, 0.65);
+  box-shadow: 0 0 14px rgba(47, 160, 198, 0.5);
+}
