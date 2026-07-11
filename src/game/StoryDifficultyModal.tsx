@@ -5,7 +5,7 @@ import { formatClock, playModeLabel, timeGoalSeconds, timeLimitSeconds } from '.
 import Avatar from './Avatar';
 import { Backdrop } from './Modals';
 import { cluewordForLevel } from './dailyDrama';
-import { difficultyAccessFor } from './difficultyProgress';
+import { difficultyAccessFor, readPreferredMode, savePreferredMode } from './difficultyProgress';
 
 const MODE_CARDS: { mode: PlayMode; title: string; subtitle: string }[] = [
   { mode: 'relaxed', title: 'Easy', subtitle: 'Story mode' },
@@ -18,15 +18,27 @@ const StoryDifficultyModal: React.FC<{
   premium: boolean;
   onStart: (mode: PlayMode) => void;
 }> = ({ level, premium, onStart }) => {
-  const [mode, setMode] = React.useState<PlayMode>('relaxed');
+  const [mode, setMode] = React.useState<PlayMode>(() => {
+    const preferred = readPreferredMode();
+    return difficultyAccessFor(preferred, level.id, premium).unlocked ? preferred : 'relaxed';
+  });
   const selectedAccess = difficultyAccessFor(mode, level.id, premium);
   const clueword = cluewordForLevel(level);
   const goal = formatClock(timeGoalSeconds(level, mode));
   const limit = formatClock(timeLimitSeconds(level, mode));
 
   React.useEffect(() => {
-    if (!selectedAccess.unlocked) setMode('relaxed');
-  }, [selectedAccess.unlocked]);
+    const preferred = readPreferredMode();
+    const access = difficultyAccessFor(preferred, level.id, premium);
+    setMode(access.unlocked ? preferred : 'relaxed');
+  }, [level.id, premium]);
+
+  const chooseMode = (nextMode: PlayMode) => {
+    const access = difficultyAccessFor(nextMode, level.id, premium);
+    if (!access.unlocked) return;
+    savePreferredMode(nextMode);
+    setMode(nextMode);
+  };
 
   return (
     <Backdrop>
@@ -76,7 +88,7 @@ const StoryDifficultyModal: React.FC<{
                 key={card.mode}
                 type="button"
                 disabled={!access.unlocked}
-                onClick={() => access.unlocked && setMode(card.mode)}
+                onClick={() => chooseMode(card.mode)}
                 className={`rounded-2xl px-2 py-3 text-left text-xs font-black transition active:scale-95 ${
                   active
                     ? 'bg-[#d6a84f] text-[#15101f]'
@@ -110,7 +122,7 @@ const StoryDifficultyModal: React.FC<{
       </div>
 
       <p className="mt-3 rounded-2xl border border-white/10 bg-black/18 px-3 py-2 text-[11px] font-bold leading-relaxed text-[#d9cda9]">
-        Medium and Hard start with 6 free trial puzzles. After that, clear 6 puzzles in that difficulty to unlock the next tier. The final tiers stay part of Full Adventure.
+        Medium and Hard start with 6 free trial puzzles. After that, clear 6 puzzles in that difficulty to unlock the next tier. Only the final 10 levels stay part of Full Adventure.
       </p>
 
       <button
