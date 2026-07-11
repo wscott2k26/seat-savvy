@@ -32,6 +32,17 @@
   order: 4;
 }
 
+/* The inactive mission button used to say "Soon," which looked unfinished. */
+button[class*="text-[#7f7890]"]:disabled {
+  font-size: 0;
+}
+
+button[class*="text-[#7f7890]"]:disabled::after {
+  content: "In Progress";
+  font-size: 10px;
+  line-height: 1;
+}
+
 @media (max-width: 430px) {
   [data-seat-count="26"],
   [data-seat-count="28"] {
