@@ -17,7 +17,7 @@ export interface DifficultyAccess {
 
 const STORAGE_KEY = 'seat_savvy_difficulty_progress_v1';
 const TRIAL_LEVELS = 6;
-const PREMIUM_LOCK_START_LEVEL = 50;
+const PREMIUM_LOCK_START_LEVEL = 39;
 
 const DEFAULT_STATE: DifficultyProgressState = {
   easy: [],
@@ -39,6 +39,12 @@ export function laneForMode(mode: PlayMode): DifficultyLane {
   if (mode === 'hard') return 'hard';
   if (mode === 'medium' || mode === 'timed') return 'medium';
   return 'easy';
+}
+
+function challengeTierIndex(mode: PlayMode, levelId: number): number {
+  if (mode === 'medium' && levelId >= 40 && levelId <= 51) return levelId - 39;
+  if (mode === 'hard' && levelId >= 52) return levelId - 51;
+  return levelId;
 }
 
 export function readDifficultyProgress(): DifficultyProgressState {
@@ -99,6 +105,7 @@ export function difficultyAccessFor(
 ): DifficultyAccess {
   const lane = laneForMode(mode);
   const label = lane === 'easy' ? 'Easy' : lane === 'medium' ? 'Medium' : 'Hard';
+  const tierIndex = challengeTierIndex(mode, levelId);
 
   if (lane === 'easy') {
     return {
@@ -109,7 +116,7 @@ export function difficultyAccessFor(
     };
   }
 
-  if (!premium && levelId >= PREMIUM_LOCK_START_LEVEL) {
+  if (!premium && tierIndex >= PREMIUM_LOCK_START_LEVEL) {
     return {
       unlocked: false,
       label,
@@ -118,7 +125,7 @@ export function difficultyAccessFor(
     };
   }
 
-  if (levelId <= TRIAL_LEVELS) {
+  if (tierIndex <= TRIAL_LEVELS) {
     return {
       unlocked: true,
       label,
@@ -129,7 +136,7 @@ export function difficultyAccessFor(
 
   const progress = readDifficultyProgress();
   const completedCount = progress[lane].length;
-  const required = Math.floor((levelId - 1) / TRIAL_LEVELS) * TRIAL_LEVELS;
+  const required = Math.floor((tierIndex - 1) / TRIAL_LEVELS) * TRIAL_LEVELS;
 
   if (completedCount >= required) {
     return {
