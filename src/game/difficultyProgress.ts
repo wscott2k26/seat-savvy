@@ -17,13 +17,23 @@ export interface DifficultyAccess {
 
 const STORAGE_KEY = 'seat_savvy_difficulty_progress_v1';
 const TRIAL_LEVELS = 6;
-const PREMIUM_LOCK_START_LEVEL = 30;
+const PREMIUM_LOCK_START_LEVEL = 50;
 
 const DEFAULT_STATE: DifficultyProgressState = {
   easy: [],
   medium: [],
   hard: [],
 };
+
+export function preferredModeStorageKey(): string {
+  return 'seat_savvy_preferred_mode_v1';
+}
+
+export function normalizePreferredMode(value?: string | null): PlayMode {
+  return value === 'medium' || value === 'hard' || value === 'relaxed'
+    ? value
+    : 'relaxed';
+}
 
 export function laneForMode(mode: PlayMode): DifficultyLane {
   if (mode === 'hard') return 'hard';
@@ -61,6 +71,24 @@ export function recordDifficultyCompletion(mode: PlayMode, levelId: number) {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   } catch {
     // Storage can fail in private browsing; ignore and keep the game playable.
+  }
+}
+
+export function savePreferredMode(mode: PlayMode) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(preferredModeStorageKey(), normalizePreferredMode(mode));
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
+export function readPreferredMode(): PlayMode {
+  if (typeof window === 'undefined') return 'relaxed';
+  try {
+    return normalizePreferredMode(window.localStorage.getItem(preferredModeStorageKey()));
+  } catch {
+    return 'relaxed';
   }
 }
 
