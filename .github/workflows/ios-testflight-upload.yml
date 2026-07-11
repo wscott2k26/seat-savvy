@@ -1,6 +1,6 @@
 name: SeatSavvy TestFlight Upload
 
-# Manual upload plus a workflow-file push trigger so this 1.0.1 challenge unlock build v5 can be kicked off from GitHub.
+# Manual upload plus a workflow-file push trigger so this 1.0.1 difficulty clue build v7 can be kicked off from GitHub.
 on:
   workflow_dispatch:
   push:
