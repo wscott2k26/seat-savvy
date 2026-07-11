@@ -1,0 +1,22 @@
+name: Kick SeatSavvy TestFlight Upload
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - ".github/workflows/kick-testflight-upload.yml"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  dispatch-testflight-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch SeatSavvy TestFlight upload on latest master
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run ios-testflight-upload.yml --ref master
