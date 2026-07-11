@@ -1,6 +1,6 @@
 name: SeatSavvy TestFlight Upload
 
-# Manual upload plus a workflow-file push trigger so this 1.0.1 challenge unlock build v2 can be kicked off from GitHub.
+# Manual upload plus a workflow-file push trigger so this 1.0.1 challenge unlock build v3 can be kicked off from GitHub.
 on:
   workflow_dispatch:
   push:
@@ -21,28 +21,18 @@ jobs:
         run: |
           python3 <<'PY'
           from pathlib import Path
+          import re
 
           path = Path('src/game/GameProvider.tsx')
           text = path.read_text()
 
-          premium_import = """import {
-  FULL_ADVENTURE_PRODUCT_ID,
-  onPremiumOwned,
-  purchaseFullAdventure,
-  restoreFullAdventure,
-  type PremiumPurchaseResult,
-} from './premiumPurchase';"""
-          replacement_import = premium_import + """
-import { difficultyAccessFor, readPreferredMode } from './difficultyProgress';"""
           if "./difficultyProgress" not in text:
-              text = text.replace(premium_import, replacement_import)
+              text = text.replace(
+                  "} from './premiumPurchase';",
+                  "} from './premiumPurchase';\nimport { difficultyAccessFor, readPreferredMode } from './difficultyProgress';",
+              )
 
-          old = """function canStartLevel(id: number, progress: Progress): boolean {
-  if (id === 1) return true;
-  if (id > FREE_LEVELS && !progress.premium) return false;
-  return progress.completed.includes(id - 1);
-}"""
-          new = """function isChallengeLevelForMode(level: Level, mode: PlayMode): boolean {
+          replacement = """function isChallengeLevelForMode(level: Level, mode: PlayMode): boolean {
   if (mode === 'medium') return level.characters.length === 15;
   if (mode === 'hard') return level.characters.length >= 20;
   return false;
@@ -61,11 +51,20 @@ function canStartLevel(id: number, progress: Progress): boolean {
 
   return progress.completed.includes(id - 1);
 }"""
-          if old not in text:
-              raise SystemExit('Expected canStartLevel block not found; refusing to build stale unlock logic.')
-          text = text.replace(old, new)
+
+          if 'function isChallengeLevelForMode' not in text:
+              text, count = re.subn(
+                  r"function canStartLevel\(id: number, progress: Progress\): boolean \{\n[\s\S]*?\n\}",
+                  replacement,
+                  text,
+                  count=1,
+              )
+              if count != 1:
+                  raise SystemExit('Unable to patch canStartLevel for challenge unlocks.')
+
           path.write_text(text)
           PY
+          grep -n "isChallengeLevelForMode\|difficultyAccessFor\|readPreferredMode" src/game/GameProvider.tsx
 
       - name: Show Xcode version
         run: |
