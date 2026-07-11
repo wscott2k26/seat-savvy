@@ -3,12 +3,14 @@ import { useGame } from './GameProvider';
 import WorldStage from './WorldStage';
 import CharacterTray from './CharacterTray';
 import TopBar from './TopBar';
-import { StoryModal, TutorialModal, WinModal } from './Modals';
+import { TutorialModal, WinModal } from './Modals';
+import StoryDifficultyModal from './StoryDifficultyModal';
 import { SettingsModal, PremiumModal } from './Panels';
 import { GAME_THEME_BACKGROUNDS } from './customization';
 import { AccountModal } from './AccountModal';
 import {
   formatClock,
+  playModeLabel,
   timeGoalSeconds,
   timeLimitSeconds,
   type PlayMode,
@@ -71,7 +73,6 @@ const PlayScreen: React.FC = () => {
     }
   }, []);
 
-  // reset modal state when a new level loads
   useEffect(() => {
     if (winTimer.current !== null) {
       window.clearTimeout(winTimer.current);
@@ -94,13 +95,15 @@ const PlayScreen: React.FC = () => {
   useEffect(() => {
     if (!level || showStory || showWin || solved || hurryHandled.current) return;
     const elapsedSeconds = (clockNow - levelStartedAt) / 1000;
-    if (elapsedSeconds < timeGoalSeconds(level)) return;
+    if (elapsedSeconds < timeGoalSeconds(level, playMode)) return;
 
     hurryHandled.current = true;
     triggerHurryCue(
-      playMode === 'timed'
-        ? 'Hurry! The top-star time goal is gone, but you can still finish the timed challenge.'
-        : 'Hurry! The top-star time goal is gone, but a clean solve can still earn strong rewards.',
+      playMode === 'hard'
+        ? 'Hard mode pressure is on. The top-star pace is gone, but you can still finish strong.'
+        : playMode === 'medium' || playMode === 'timed'
+          ? 'Medium pace missed the top-star goal, but a clean finish still pays.'
+          : 'Hurry! The top-star time goal is gone, but a clean solve can still earn strong rewards.',
     );
   }, [
     clockNow,
@@ -145,17 +148,18 @@ const PlayScreen: React.FC = () => {
     GAME_THEME_BACKGROUNDS[progress.customization.gameTheme] ??
     GAME_THEME_BACKGROUNDS['midnight-gold'];
   const elapsedSeconds = Math.max(0, (clockNow - levelStartedAt) / 1000);
-  const goalRemaining = Math.max(0, timeGoalSeconds(level) - elapsedSeconds);
-  const limitRemaining = Math.max(0, timeLimitSeconds(level) - elapsedSeconds);
+  const goalRemaining = Math.max(0, timeGoalSeconds(level, playMode) - elapsedSeconds);
+  const limitRemaining = Math.max(0, timeLimitSeconds(level, playMode) - elapsedSeconds);
+  const challengeMode = playMode === 'medium' || playMode === 'hard' || playMode === 'timed';
   const timerLabel =
     showStory
       ? undefined
-      : playMode === 'timed'
-        ? `${formatClock(limitRemaining)} limit`
+      : challengeMode
+        ? `${playModeLabel(playMode)} ${formatClock(limitRemaining)}`
         : `${formatClock(goalRemaining)} star`;
   const timerUrgent =
     !showStory &&
-    (goalRemaining <= 0 || (playMode === 'timed' && limitRemaining <= 20));
+    (goalRemaining <= 0 || (challengeMode && limitRemaining <= 20));
 
   return (
     <div
@@ -201,7 +205,7 @@ const PlayScreen: React.FC = () => {
       <CharacterTray />
 
       {showStory && (
-        <StoryModal
+        <StoryDifficultyModal
           level={level}
           onStart={(mode: PlayMode) => {
             beginLevelRun(mode);
