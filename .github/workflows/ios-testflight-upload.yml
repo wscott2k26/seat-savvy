@@ -1,6 +1,6 @@
 name: SeatSavvy TestFlight Upload
 
-# Manual upload plus a workflow-file push trigger so this 1.0.1 update can be kicked off from GitHub.
+# Manual upload plus a workflow-file push trigger so this 1.0.1 fix build can be kicked off from GitHub.
 on:
   workflow_dispatch:
   push:
