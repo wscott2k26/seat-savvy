@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core'
 import { StatusBar, Style } from '@capacitor/status-bar'
 import App from './App.tsx'
 import './index.css'
+import './seat-savvy-polish.css'
 
 const isIOSLikeBrowser = () =>
   /iPad|iPhone|iPod/.test(window.navigator.userAgent) ||
