@@ -6,12 +6,37 @@ import ClueIcon from './ClueIcon';
 import { clueIcon, clueText } from './constraints';
 import { characterLook } from './characterLooks';
 
-function trayOrderValue(id: string, seed: number): number {
-  let hash = seed;
-  for (let i = 0; i < id.length; i += 1) {
-    hash = (hash * 31 + id.charCodeAt(i)) % 9973;
+type TrayCharacter = NonNullable<ReturnType<typeof useGame>['level']>['characters'][number];
+
+function makeSeed(levelId: number, count: number): number {
+  return (levelId * 2654435761 + count * 1013904223) >>> 0;
+}
+
+function shuffledTray(characters: TrayCharacter[], levelId: number): TrayCharacter[] {
+  const shuffled = characters.slice();
+  let state = makeSeed(levelId, characters.length) || 1;
+  const next = () => {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    return state / 0x100000000;
+  };
+
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(next() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-  return hash;
+
+  // Avoid the giveaway where the first tray card still belongs in the first seat,
+  // second card still belongs in the second seat, etc. If any card lands back in
+  // its original source slot, rotate it forward so the whole tray starts mixed.
+  if (shuffled.length > 2) {
+    for (let i = 0; i < shuffled.length; i += 1) {
+      if (shuffled[i].id !== characters[i]?.id) continue;
+      const swapIndex = (i + 2) % shuffled.length;
+      [shuffled[i], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[i]];
+    }
+  }
+
+  return shuffled;
 }
 
 const CharacterTray: React.FC = () => {
@@ -22,13 +47,15 @@ const CharacterTray: React.FC = () => {
   const nameOf = (id: string) =>
     level.characters.find((c) => c.id === id)?.name ?? '?';
 
-  const unplaced = useMemo(() => {
-    const seed = level.id * 97 + level.characters.length * 13;
-    return level.characters
-      .filter((c) => !placement[c.id])
-      .slice()
-      .sort((a, b) => trayOrderValue(a.id, seed) - trayOrderValue(b.id, seed));
-  }, [level.characters, level.id, placement]);
+  const trayOrder = useMemo(
+    () => shuffledTray(level.characters, level.id),
+    [level.characters, level.id],
+  );
+
+  const unplaced = useMemo(
+    () => trayOrder.filter((c) => !placement[c.id]),
+    [trayOrder, placement],
+  );
 
   return (
     <div
