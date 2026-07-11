@@ -1,6 +1,6 @@
 name: SeatSavvy TestFlight Upload
 
-# Manual upload plus a workflow-file push trigger so this 1.0.1 challenge unlock build v4 can be kicked off from GitHub.
+# Manual upload plus a workflow-file push trigger so this 1.0.1 challenge unlock build v5 can be kicked off from GitHub.
 on:
   workflow_dispatch:
   push:
@@ -23,8 +23,8 @@ jobs:
           from pathlib import Path
           import re
 
-          path = Path('src/game/GameProvider.tsx')
-          text = path.read_text()
+          provider = Path('src/game/GameProvider.tsx')
+          text = provider.read_text()
 
           if "./difficultyProgress" not in text:
               text = text.replace(
@@ -32,7 +32,7 @@ jobs:
                   "} from './premiumPurchase';\nimport { difficultyAccessFor, readPreferredMode } from './difficultyProgress';",
               )
 
-          replacement = "\n".join([
+          provider_replacement = "\n".join([
               "function isChallengeLevelForMode(level: Level, mode: PlayMode): boolean {",
               "  if (mode === 'medium') return level.characters.length === 15;",
               "  if (mode === 'hard') return level.characters.length >= 20;",
@@ -57,16 +57,42 @@ jobs:
           if 'function isChallengeLevelForMode' not in text:
               text, count = re.subn(
                   r"function canStartLevel\(id: number, progress: Progress\): boolean \{\n[\s\S]*?\n\}",
-                  replacement,
+                  provider_replacement,
                   text,
                   count=1,
               )
               if count != 1:
                   raise SystemExit('Unable to patch canStartLevel for challenge unlocks.')
+          provider.write_text(text)
 
-          path.write_text(text)
+          level_select = Path('src/game/LevelSelect.tsx')
+          ls = level_select.read_text()
+
+          if 'difficultyAccessFor' not in ls:
+              ls = ls.replace(
+                  "import { readPreferredMode, savePreferredMode } from './difficultyProgress';",
+                  "import { difficultyAccessFor, readPreferredMode, savePreferredMode } from './difficultyProgress';",
+              )
+
+          if 'const isChallengeMatchForMode' not in ls:
+              ls = ls.replace(
+                  "const difficultyFor = (level: Level) => {\n  if (level.characters.length >= 24) return 'Expert';\n  if (level.characters.length >= 20) return 'Hard';\n  if (level.characters.length >= 15) return 'Medium';\n  if (level.characters.length >= 10) return 'Easy';\n  if (level.id <= 5) return 'Beginner';\n  return 'Easy';\n};",
+                  "const difficultyFor = (level: Level) => {\n  if (level.characters.length >= 24) return 'Expert';\n  if (level.characters.length >= 20) return 'Hard';\n  if (level.characters.length >= 15) return 'Medium';\n  if (level.characters.length >= 10) return 'Easy';\n  if (level.id <= 5) return 'Beginner';\n  return 'Easy';\n};\n\nconst isChallengeMatchForMode = (level: Level, mode: PlayMode) => {\n  if (mode === 'medium') return level.characters.length === 15;\n  if (mode === 'hard') return level.characters.length >= 20;\n  return false;\n};",
+              )
+
+          ls = ls.replace(
+              "const unlocked = isUnlocked(lv.id);",
+              "const challengeAccess = difficultyAccessFor(preferredMode, lv.id, progress.premium);\n                  const challengeUnlocked = isChallengeMatchForMode(lv, preferredMode) && challengeAccess.unlocked;\n                  const unlocked = isUnlocked(lv.id) || challengeUnlocked;",
+          )
+
+          ls = ls.replace(
+              "{lv.id > freeLevels && !progress.premium\n                            ? 'Premium locked'\n                            : `Finish Level ${lv.id - 1}`}",
+              "{isChallengeMatchForMode(lv, preferredMode)\n                            ? challengeAccess.detail\n                            : lv.id > freeLevels && !progress.premium\n                              ? 'Premium locked'\n                              : `Finish Level ${lv.id - 1}`}",
+          )
+
+          level_select.write_text(ls)
           PY
-          grep -n "isChallengeLevelForMode\|difficultyAccessFor\|readPreferredMode" src/game/GameProvider.tsx
+          grep -n "isChallengeLevelForMode\|difficultyAccessFor\|readPreferredMode" src/game/GameProvider.tsx src/game/LevelSelect.tsx
 
       - name: Show Xcode version
         run: |
