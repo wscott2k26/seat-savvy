@@ -82,7 +82,7 @@ const TRAITS = [
   'Bright aisle thinker',
 ];
 
-type GeneratedSeatCount = 10 | 15 | 20 | 24;
+type GeneratedSeatCount = 10 | 15 | 20 | 24 | 26 | 28 | 30;
 
 interface ExpansionSpec {
   env: EnvironmentId;
@@ -132,6 +132,26 @@ const EXPANSION_SPECS: ExpansionSpec[] = [
   { env: 'observatory', host: 'Astronomer Astra', title: 'Telescope Night Rush', count: 24 },
   { env: 'spaceship', host: 'Captain Orbit', title: 'Orbital Seat Sort', count: 24 },
   { env: 'castle-banquet', host: 'Steward Sterling', title: 'Castle Banquet Finale', count: 24 },
+  { env: 'hotel-lobby', host: 'Concierge Sol', title: 'Grand Lobby Gridlock', count: 26 },
+  { env: 'concert-hall', host: 'Maestro Mina', title: 'Symphony Seat Storm', count: 26 },
+  { env: 'rooftop-party', host: 'DJ Skyline', title: 'Rooftop VIP Rush', count: 26 },
+  { env: 'science-lab', host: 'Dr. Bunsen', title: 'Experiment Partner Panic', count: 26 },
+  { env: 'spaceship', host: 'Captain Orbit', title: 'Zero-G Seating Jam', count: 26 },
+  { env: 'castle-banquet', host: 'Steward Sterling', title: 'Royal Table Tangle', count: 26 },
+  { env: 'observatory', host: 'Astronomer Astra', title: 'Meteor Shower Shuffle', count: 28 },
+  { env: 'street-festival', host: 'Planner Pop', title: 'Main Stage Mayhem', count: 28 },
+  { env: 'food-truck-park', host: 'Chef Wheels', title: 'Food Truck Finale', count: 28 },
+  { env: 'board-game-cafe', host: 'Tabletop Tess', title: 'Tournament Table Trouble', count: 28 },
+  { env: 'art-studio', host: 'Painter Pia', title: 'Gallery Critique Crunch', count: 28 },
+  { env: 'beach-resort', host: 'Lifeguard Lani', title: 'Resort Chair Rush', count: 28 },
+  { env: 'city-park', host: 'Ranger Rue', title: 'Park Festival Puzzle', count: 30 },
+  { env: 'botanical-garden', host: 'Gardener Fern', title: 'Greenhouse Grand Shuffle', count: 30 },
+  { env: 'sushi-bar', host: 'Chef Sora', title: 'Omakase Order Crisis', count: 30 },
+  { env: 'pizzeria', host: 'Chef Nico', title: 'Family Pizza Frenzy', count: 30 },
+  { env: 'shopping-mall', host: 'Mall Host Mira', title: 'Holiday Mall Mega Mix', count: 30 },
+  { env: 'spaceship', host: 'Captain Orbit', title: 'Galaxy Finale: Thirty Seats', count: 30 },
+  { env: 'dream-estate' as EnvironmentId, host: 'Host Honey', title: 'Dream Estate Party', count: 30 },
+  { env: 'castle-banquet', host: 'Steward Sterling', title: 'Final Banquet Boss', count: 30 },
 ];
 
 export const EXPANSION_LEVELS: Level[] = EXPANSION_SPECS.map((spec, index) =>
@@ -141,9 +161,9 @@ export const EXPANSION_LEVELS: Level[] = EXPANSION_SPECS.map((spec, index) =>
     title: spec.title,
     hostName: spec.host,
     intro:
-      `${ENVIRONMENT_LABELS[spec.env]} is packed today. ${spec.count} guests have sharper preferences now, so match every icon before the room gets restless.`,
+      `${ENVIRONMENT_LABELS[spec.env] ?? spec.title} is packed today. ${spec.count} guests have sharper preferences now, so match every icon before the room gets restless.`,
     outro:
-      `${ENVIRONMENT_LABELS[spec.env]} settles into a smooth rhythm. Every guest found the exact spot they were hoping for.`,
+      `${ENVIRONMENT_LABELS[spec.env] ?? spec.title} settles into a smooth rhythm. Every guest found the exact spot they were hoping for.`,
     count: spec.count,
     seed: 400 + index,
   }),
@@ -213,18 +233,15 @@ function makeCharacter(
 }
 
 function makeGridSeats(count: GeneratedSeatCount, combos: SeatAttr[][]): Seat[] {
-  const cols = count === 24 ? 6 : 5;
+  const cols = count >= 24 ? 6 : 5;
   const rows = Math.ceil(count / cols);
-  const xs =
-    cols === 6
-      ? [9, 25, 41, 59, 75, 91]
-      : [12, 31, 50, 69, 88];
-  const yRows =
-    rows === 2
-      ? [34, 64]
-      : rows === 3
-        ? [26, 50, 74]
-        : [20, 38, 56, 74];
+  const xs = cols === 6 ? [9, 25, 41, 59, 75, 91] : [12, 31, 50, 69, 88];
+  const yRows = Array.from({ length: rows }).map((_, index) => {
+    if (rows === 2) return [34, 64][index];
+    if (rows === 3) return [26, 50, 74][index];
+    if (rows === 4) return [20, 38, 56, 74][index];
+    return [16, 31, 46, 61, 76][index];
+  });
 
   const seats: Seat[] = Array.from({ length: count }).map((_, index) => {
     const row = Math.floor(index / cols);
