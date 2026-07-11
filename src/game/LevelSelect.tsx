@@ -12,6 +12,14 @@ import {
 import { locationFor } from './locations';
 import type { Level } from './types';
 import { pickDailyDramaLevel } from './dailyDrama';
+import { playModeLabel, type PlayMode } from './timing';
+import { readPreferredMode, savePreferredMode } from './difficultyProgress';
+
+const FRONT_PAGE_MODES: { mode: PlayMode; label: string; sublabel: string }[] = [
+  { mode: 'relaxed', label: 'Easy', sublabel: 'Story' },
+  { mode: 'medium', label: 'Medium', sublabel: 'Challenge' },
+  { mode: 'hard', label: 'Hard', sublabel: 'Boss' },
+];
 
 const chapterFor = (level: Level) => {
   if (level.characters.length >= 24) return 'Expert Premium - 24 Seat Rooms';
@@ -55,6 +63,7 @@ const LevelSelect: React.FC<{
   onShop,
 }) => {
   const { freeLevels, levels, progress, startLevel, isUnlocked } = useGame();
+  const [preferredMode, setPreferredMode] = React.useState<PlayMode>(() => readPreferredMode());
   const completedCount = progress.completed.length;
   const playerLevel = playerLevelForXp(progress.xp);
   const xpInto = xpIntoLevel(progress.xp);
@@ -73,6 +82,11 @@ const LevelSelect: React.FC<{
     acc[chapter].push(level);
     return acc;
   }, {});
+
+  const choosePreferredMode = (mode: PlayMode) => {
+    savePreferredMode(mode);
+    setPreferredMode(mode);
+  };
 
   return (
     <div
@@ -160,6 +174,36 @@ const LevelSelect: React.FC<{
             <span>{stars} stars</span>
             <span>Next: {nextLevelRewardLabel(playerLevel)}</span>
           </div>
+        </div>
+
+        <div className="relative mt-4 rounded-3xl border border-[#d6a84f]/22 bg-[#050816]/45 p-3 shadow-inner backdrop-blur">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#d6a84f]">Difficulty</p>
+            <p className="text-[10px] font-extrabold text-[#f6d98d]">Selected: {playModeLabel(preferredMode)}</p>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {FRONT_PAGE_MODES.map((card) => {
+              const active = preferredMode === card.mode;
+              return (
+                <button
+                  key={card.mode}
+                  type="button"
+                  onClick={() => choosePreferredMode(card.mode)}
+                  className={`rounded-2xl px-2 py-3 text-left text-xs font-black transition active:scale-95 ${
+                    active
+                      ? 'bg-[#d6a84f] text-[#15101f] shadow-[0_0_18px_rgba(214,168,79,0.22)]'
+                      : 'border border-white/10 bg-white/8 text-[#d9cda9]'
+                  }`}
+                >
+                  <span className="block font-display text-sm leading-tight">{card.label}</span>
+                  <span className="block text-[9px] font-bold uppercase tracking-wide opacity-75">{card.sublabel}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-2 text-[10px] font-bold leading-snug text-[#a9a0b5]">
+            Medium and Hard are free to try, then unlock in 6-solve tiers. Final 10 levels stay premium.
+          </p>
         </div>
 
         <div className="relative mt-4 grid grid-cols-3 gap-2">
@@ -284,7 +328,7 @@ const LevelSelect: React.FC<{
                       )}
                       <div className="relative mt-1 flex items-center justify-between">
                         <span className="rounded-full border border-white/10 bg-white/12 px-2 py-0.5 text-[10px] font-extrabold text-[#f6d98d]">
-                          {difficultyFor(lv)}
+                          {difficultyFor(lv)} / {playModeLabel(preferredMode)}
                         </span>
                         <StarMeter stars={stars} small />
                       </div>
