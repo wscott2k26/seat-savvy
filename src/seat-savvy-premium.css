@@ -1,0 +1,51 @@
+/* SeatSavvy 1.0.1 premium/mega level support */
+
+[data-seat-count="26"],
+[data-seat-count="28"],
+[data-seat-count="30"] {
+  --seat-size: 1.85rem;
+}
+
+[data-seat-count="30"] {
+  --seat-size: 1.72rem;
+}
+
+@media (max-width: 430px) {
+  [data-seat-count="26"],
+  [data-seat-count="28"] {
+    --seat-size: 1.55rem;
+  }
+
+  [data-seat-count="30"] {
+    --seat-size: 1.42rem;
+  }
+
+  [data-seat-count="26"] .safe-seat-field,
+  [data-seat-count="28"] .safe-seat-field,
+  [data-seat-count="30"] .safe-seat-field {
+    inset: calc(var(--safe-area-top) + 6.15rem) 0 0.35rem 0;
+  }
+
+  [data-seat-count="26"] .seat-name-label,
+  [data-seat-count="28"] .seat-name-label,
+  [data-seat-count="30"] .seat-name-label {
+    display: none;
+  }
+
+  [data-seat-count="26"] .seat-status-badge,
+  [data-seat-count="28"] .seat-status-badge,
+  [data-seat-count="30"] .seat-status-badge {
+    display: none;
+  }
+}
+
+@media (max-height: 740px), (max-width: 380px) {
+  [data-seat-count="26"],
+  [data-seat-count="28"] {
+    --seat-size: 1.46rem;
+  }
+
+  [data-seat-count="30"] {
+    --seat-size: 1.34rem;
+  }
+}
