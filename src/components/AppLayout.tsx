@@ -5,6 +5,7 @@ import LevelSelect from '@/game/LevelSelect';
 import PlayScreen from '@/game/PlayScreen';
 import CustomizeScreen from '@/game/CustomizeScreen';
 import HomeScreen from '@/game/HomeScreen';
+import AppUpdateNotice from '@/game/AppUpdateNotice';
 import {
   AchievementsScreen,
   DailyRewardModal,
@@ -94,6 +95,7 @@ const GameShell: React.FC = () => {
     <DragLayer>
       <CloudAccountBridge />
       <div className="relative h-[100dvh] w-full select-none md:h-[calc(100dvh-2rem)]">
+        <AppUpdateNotice />
         {screen === 'menu' ? (
           <LevelSelect
             onAccount={() => setShowAccount(true)}
