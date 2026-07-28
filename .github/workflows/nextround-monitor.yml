@@ -1,0 +1,70 @@
+name: NextRound Build Monitor
+
+# Synchronization trigger: 2026-07-28T04:39:21Z
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - ".github/workflows/nextround-monitor.yml"
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: read
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    steps:
+      - name: Wait for isolated store build and collect its output
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p recovered-artifacts
+          RUN_ID=""
+          STATUS=""
+          CONCLUSION=""
+          for attempt in $(seq 1 180); do
+            JSON=$(gh run list \
+              --repo "$GH_REPO" \
+              --workflow 'NextRound Store Build' \
+              --branch nextround-build \
+              --limit 1 \
+              --json databaseId,status,conclusion,headSha,url 2>/dev/null || echo '[]')
+            RUN_ID=$(echo "$JSON" | jq -r '.[0].databaseId // empty')
+            STATUS=$(echo "$JSON" | jq -r '.[0].status // empty')
+            CONCLUSION=$(echo "$JSON" | jq -r '.[0].conclusion // empty')
+            echo "Attempt $attempt: run=${RUN_ID:-none} status=${STATUS:-none} conclusion=${CONCLUSION:-none}"
+            if [ -n "$RUN_ID" ] && [ "$STATUS" = "completed" ]; then
+              break
+            fi
+            sleep 20
+          done
+          if [ -z "$RUN_ID" ]; then
+            echo 'No NextRound Store Build run was found.' | tee recovered-artifacts/monitor-error.txt
+            exit 1
+          fi
+          {
+            echo "run_id=$RUN_ID"
+            echo "status=$STATUS"
+            echo "conclusion=$CONCLUSION"
+            gh run view "$RUN_ID" --repo "$GH_REPO" --json url,headSha,status,conclusion,createdAt,updatedAt,jobs
+          } | tee recovered-artifacts/run-metadata.txt
+          gh run view "$RUN_ID" --repo "$GH_REPO" --log > recovered-artifacts/complete-run.log 2>&1 || true
+          gh run download "$RUN_ID" --repo "$GH_REPO" --dir recovered-artifacts/downloaded || true
+          find recovered-artifacts -maxdepth 4 -type f -print
+
+      - name: Upload collected build logs and binaries
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: NextRound-collected-build-output
+          path: recovered-artifacts
+          if-no-files-found: warn
+          retention-days: 30
