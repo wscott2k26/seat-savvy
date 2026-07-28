@@ -1,0 +1,320 @@
+name: NextRound Temporary Store Build
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - "nextround-trigger/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nextround-temporary-store-build
+  cancel-in-progress: false
+
+env:
+  BUNDLE_ID: com.willywill.nextroundai
+  SOURCE_B64_SHA256: 1aba39d9ac4377bb2cde27200b2969bf3a7ee21b6ad29554a93953333a0f8079
+  SOURCE_TGZ_SHA256: da5bfa13b77b4c850fbd3a0c0f5f8b4967789fddfb228df4af5c68c98716e25d
+
+jobs:
+  android:
+    name: Signed Android AAB
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      KEY_SEED_A: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}
+      KEY_SEED_B: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Restore, verify, and patch NextRound source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p nextround-mobile
+          : > /tmp/nextround.b64
+          for url in \
+            https://nextround-src-00.vercel.app/part00 \
+            https://nextround-src-01.vercel.app/part01 \
+            https://nextround-src-02.vercel.app/part02 \
+            https://nextround-src-03.vercel.app/part03 \
+            https://nextround-src-04.vercel.app/part04; do
+            curl --fail --location --retry 5 --retry-all-errors "$url" >> /tmp/nextround.b64
+          done
+          echo "$SOURCE_B64_SHA256  /tmp/nextround.b64" | sha256sum --check
+          base64 --decode /tmp/nextround.b64 > /tmp/nextround.tgz
+          echo "$SOURCE_TGZ_SHA256  /tmp/nextround.tgz" | sha256sum --check
+          tar -xzf /tmp/nextround.tgz -C nextround-mobile
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          root = Path('nextround-mobile')
+          app_path = root / 'app.json'
+          app = json.loads(app_path.read_text())
+          expo = app['expo']
+          expo['owner'] = 'wscott2k8'
+          expo['slug'] = 'nextround-ai'
+          expo['ios']['bundleIdentifier'] = 'com.willywill.nextroundai'
+          expo['android']['package'] = 'com.willywill.nextroundai'
+          expo.pop('newArchEnabled', None)
+          expo.pop('splash', None)
+          expo['android'].pop('edgeToEdgeEnabled', None)
+          app_path.write_text(json.dumps(app, indent=2) + '\n')
+          ts = root / 'App.tsx'
+          text = ts.read_text()
+          text = text.replace(
+              'const currentQuestion = analysis.questions[interviewIndex % analysis.questions.length] || fallbackQuestions[0];',
+              'const currentQuestion = (analysis.questions.length ? analysis.questions[interviewIndex % analysis.questions.length] : undefined) ?? fallbackQuestions[0]!;'
+          )
+          text = text.replace(
+              'const currentQuiz = analysis.quiz[quizIndex % analysis.quiz.length] || fallbackQuiz[0];',
+              'const currentQuiz = (analysis.quiz.length ? analysis.quiz[quizIndex % analysis.quiz.length] : undefined) ?? fallbackQuiz[0]!;'
+          )
+          ts.write_text(text)
+          package_path = root / 'package.json'
+          package = json.loads(package_path.read_text())
+          package['devDependencies']['typescript'] = '~6.0.3'
+          package_path.write_text(json.dumps(package, indent=2) + '\n')
+          PY
+
+      - name: Install, doctor, and typecheck
+        working-directory: nextround-mobile
+        run: |
+          set -euo pipefail
+          npm install --no-audit --no-fund
+          npx expo-doctor
+          npm run typecheck
+
+      - name: Generate Android native project
+        working-directory: nextround-mobile
+        run: CI=1 npx expo prebuild --platform android --clean
+
+      - name: Create dedicated upload key and configure signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$KEY_SEED_A"
+          test -n "$KEY_SEED_B"
+          STORE_PASS=$(printf '%s' "${KEY_SEED_A}|${KEY_SEED_B}|NextRound-AI" | sha256sum | cut -c1-32)
+          export STORE_PASS
+          KEYSTORE="$GITHUB_WORKSPACE/nextround-mobile/android/app/nextround-upload.keystore"
+          keytool -genkeypair -v -storetype PKCS12 -keystore "$KEYSTORE" -alias nextround -keyalg RSA -keysize 2048 -validity 10000 -storepass "$STORE_PASS" -keypass "$STORE_PASS" -dname 'CN=NextRound AI, OU=Mobile, O=WTAW Services, L=Easley, ST=South Carolina, C=US'
+          cat >> nextround-mobile/android/gradle.properties <<EOF
+          NEXTROUND_STORE_FILE=nextround-upload.keystore
+          NEXTROUND_KEY_ALIAS=nextround
+          NEXTROUND_STORE_PASSWORD=$STORE_PASS
+          NEXTROUND_KEY_PASSWORD=$STORE_PASS
+          EOF
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('nextround-mobile/android/app/build.gradle')
+          text = p.read_text()
+          text = text.replace('signingConfigs {', '''signingConfigs {
+                  release {
+                      storeFile file(NEXTROUND_STORE_FILE)
+                      storePassword NEXTROUND_STORE_PASSWORD
+                      keyAlias NEXTROUND_KEY_ALIAS
+                      keyPassword NEXTROUND_KEY_PASSWORD
+                  }''', 1)
+          needle = 'signingConfig signingConfigs.debug'
+          pos = text.rfind(needle)
+          if pos < 0:
+              raise SystemExit('Release signing placeholder not found')
+          text = text[:pos] + 'signingConfig signingConfigs.release' + text[pos + len(needle):]
+          p.write_text(text)
+          PY
+          mkdir -p "$RUNNER_TEMP/nextround-key-recovery"
+          cp "$KEYSTORE" "$RUNNER_TEMP/nextround-key-recovery/nextround-upload.keystore"
+          {
+            echo 'Alias: nextround'
+            echo "Store password: $STORE_PASS"
+            echo "Key password: $STORE_PASS"
+            echo 'Keep private. Future Google Play updates must use this key.'
+          } > "$RUNNER_TEMP/nextround-key-recovery/RECOVERY.txt"
+
+      - name: Build signed AAB
+        working-directory: nextround-mobile/android
+        run: |
+          chmod +x gradlew
+          ./gradlew clean bundleRelease --no-daemon --stacktrace
+          AAB=$(find app/build/outputs/bundle/release -name '*.aab' | head -n1)
+          test -f "$AAB"
+          sha256sum "$AAB" | tee "$GITHUB_WORKSPACE/nextround-mobile/NextRoundAI-aab.sha256"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NextRound-AI-Android-signed
+          path: |
+            nextround-mobile/android/app/build/outputs/bundle/release/*.aab
+            nextround-mobile/NextRoundAI-aab.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NextRound-AI-Android-key-recovery-PRIVATE
+          path: ${{ runner.temp }}/nextround-key-recovery
+          if-no-files-found: error
+          retention-days: 30
+
+  ios:
+    name: Signed iOS IPA
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode 26
+        run: |
+          set -euo pipefail
+          XCODE_PATH=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort | tail -n1)
+          test -n "$XCODE_PATH"
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+          xcodebuild -version
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Restore, verify, and patch NextRound source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p nextround-mobile
+          : > /tmp/nextround.b64
+          for url in \
+            https://nextround-src-00.vercel.app/part00 \
+            https://nextround-src-01.vercel.app/part01 \
+            https://nextround-src-02.vercel.app/part02 \
+            https://nextround-src-03.vercel.app/part03 \
+            https://nextround-src-04.vercel.app/part04; do
+            curl --fail --location --retry 5 --retry-all-errors "$url" >> /tmp/nextround.b64
+          done
+          ACTUAL=$(shasum -a 256 /tmp/nextround.b64 | awk '{print $1}')
+          test "$ACTUAL" = "$SOURCE_B64_SHA256"
+          base64 --decode /tmp/nextround.b64 > /tmp/nextround.tgz
+          ACTUAL=$(shasum -a 256 /tmp/nextround.tgz | awk '{print $1}')
+          test "$ACTUAL" = "$SOURCE_TGZ_SHA256"
+          tar -xzf /tmp/nextround.tgz -C nextround-mobile
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          root = Path('nextround-mobile')
+          app_path = root / 'app.json'
+          app = json.loads(app_path.read_text())
+          expo = app['expo']
+          expo['owner'] = 'wscott2k8'
+          expo['slug'] = 'nextround-ai'
+          expo['ios']['bundleIdentifier'] = 'com.willywill.nextroundai'
+          expo['android']['package'] = 'com.willywill.nextroundai'
+          expo.pop('newArchEnabled', None)
+          expo.pop('splash', None)
+          expo['android'].pop('edgeToEdgeEnabled', None)
+          app_path.write_text(json.dumps(app, indent=2) + '\n')
+          ts = root / 'App.tsx'
+          text = ts.read_text()
+          text = text.replace('const currentQuestion = analysis.questions[interviewIndex % analysis.questions.length] || fallbackQuestions[0];', 'const currentQuestion = (analysis.questions.length ? analysis.questions[interviewIndex % analysis.questions.length] : undefined) ?? fallbackQuestions[0]!;')
+          text = text.replace('const currentQuiz = analysis.quiz[quizIndex % analysis.quiz.length] || fallbackQuiz[0];', 'const currentQuiz = (analysis.quiz.length ? analysis.quiz[quizIndex % analysis.quiz.length] : undefined) ?? fallbackQuiz[0]!;')
+          ts.write_text(text)
+          package_path = root / 'package.json'
+          package = json.loads(package_path.read_text())
+          package['devDependencies']['typescript'] = '~6.0.3'
+          package_path.write_text(json.dumps(package, indent=2) + '\n')
+          PY
+
+      - name: Install, doctor, typecheck, and prebuild
+        working-directory: nextround-mobile
+        run: |
+          set -euo pipefail
+          npm install --no-audit --no-fund
+          npx expo-doctor
+          npm run typecheck
+          CI=1 npx expo prebuild --platform ios --clean
+          cd ios
+          pod install --repo-update
+
+      - name: Install Apple distribution certificate
+        env:
+          CERT_B64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$CERT_B64"
+          test -n "$CERT_PASSWORD"
+          CERT="$RUNNER_TEMP/nextround.p12"
+          KEYCHAIN="$RUNNER_TEMP/nextround.keychain-db"
+          PASS='temporary-nextround-keychain'
+          echo "$CERT_B64" | base64 --decode > "$CERT"
+          security create-keychain -p "$PASS" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$PASS" "$KEYCHAIN"
+          security import "$CERT" -P "$CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$PASS" "$KEYCHAIN"
+          security list-keychain -d user -s "$KEYCHAIN"
+          security find-identity -v -p codesigning "$KEYCHAIN"
+          echo "KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
+
+      - name: Prepare App Store Connect API key
+        env:
+          ASC_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APPLE_TEAM: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$ASC_KEY"
+          test -n "$ASC_KEY_ID"
+          test -n "$ASC_ISSUER"
+          test -n "$APPLE_TEAM"
+          mkdir -p "$RUNNER_TEMP/private_keys" "$HOME/.appstoreconnect/private_keys"
+          KEY_PATH="$RUNNER_TEMP/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          printf '%s\n' "$ASC_KEY" > "$KEY_PATH"
+          cp "$KEY_PATH" "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          chmod 600 "$KEY_PATH"
+          echo "KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
+
+      - name: Archive and export signed IPA
+        working-directory: nextround-mobile
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APPLE_TEAM: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          WORKSPACE=$(find ios -maxdepth 2 -name '*.xcworkspace' | head -n1)
+          SCHEME=$(basename "$WORKSPACE" .xcworkspace)
+          mkdir -p build
+          xcodebuild archive -workspace "$WORKSPACE" -scheme "$SCHEME" -configuration Release -destination 'generic/platform=iOS' -archivePath build/NextRoundAI.xcarchive -allowProvisioningUpdates -authenticationKeyPath "$KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER" CODE_SIGN_STYLE=Automatic DEVELOPMENT_TEAM="$APPLE_TEAM" PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" CODE_SIGN_IDENTITY='Apple Distribution' OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN" MARKETING_VERSION='1.0.0' CURRENT_PROJECT_VERSION="${GITHUB_RUN_NUMBER}" archive
+          cat > ExportOptions.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>teamID</key><string>${APPLE_TEAM}</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+            <key>stripSwiftSymbols</key><true/>
+            <key>uploadSymbols</key><true/>
+          </dict></plist>
+          EOF
+          xcodebuild -exportArchive -archivePath build/NextRoundAI.xcarchive -exportPath build/export -exportOptionsPlist ExportOptions.plist -allowProvisioningUpdates -authenticationKeyPath "$KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER"
+          IPA=$(find build/export -name '*.ipa' | head -n1)
+          test -f "$IPA"
+          shasum -a 256 "$IPA" | tee build/NextRoundAI-ipa.sha256
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NextRound-AI-iOS-signed
+          path: |
+            nextround-mobile/build/export/*.ipa
+            nextround-mobile/build/NextRoundAI-ipa.sha256
+          if-no-files-found: error
+          retention-days: 30
