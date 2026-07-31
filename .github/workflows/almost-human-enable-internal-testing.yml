@@ -1,0 +1,216 @@
+name: Enable Almost Human Internal TestFlight
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - '.github/run-almost-human-enable-internal-testing.json'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: almost-human-internal-testflight-setup
+  cancel-in-progress: false
+
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Validate explicit internal-testing authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          t=json.load(open('.github/run-almost-human-enable-internal-testing.json'))
+          assert t['operation']=='ENABLE_INTERNAL_TESTING_ONCE'
+          assert t['confirm']=='ENABLE_INTERNAL_TESTING_ONCE'
+          assert str(t['ascAppId'])=='6796814542'
+          assert t['bundleId']=='com.stormandme.almosthuman'
+          assert t['testerEmail']=='wscott2k8@gmail.com'
+          assert t['appleBuildResourceId']=='134dbe23-97ef-4fca-bcfc-18b744f612ee'
+          assert t['buildsAuthorized']==0
+          assert t['uploadsAuthorized']==0
+          assert t['internalGroupChangesAuthorized']==1
+          assert t['testerAssignmentsAuthorized']==1
+          status=json.load(open('ALMOST_HUMAN_TESTFLIGHT_STATUS.json'))
+          assert status['status']=='READY_FOR_INTERNAL_TESTING'
+          access=json.load(open('ALMOST_HUMAN_TESTFLIGHT_ACCESS.json'))
+          assert access['status']=='TESTER_ASSIGNMENT_NEEDED'
+          PY
+
+      - name: Refuse duplicate completed setup
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f ALMOST_HUMAN_INTERNAL_TESTING_RECORD.json ]]; then
+            python3 - <<'PY'
+          import json
+          r=json.load(open('ALMOST_HUMAN_INTERNAL_TESTING_RECORD.json'))
+          if r.get('status')=='INTERNAL_TESTING_ENABLED':
+              raise SystemExit('Internal testing is already enabled; refusing duplicate mutations.')
+          PY
+          fi
+
+      - name: Create/reuse internal group and assign exact build and tester
+        shell: bash
+        env:
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet pyjwt cryptography
+          python3 - <<'PY'
+          import json, os, time, urllib.parse, urllib.request, urllib.error
+          from pathlib import Path
+          import jwt
+
+          app_id='6796814542'
+          bundle_id='com.stormandme.almosthuman'
+          build_id='134dbe23-97ef-4fca-bcfc-18b744f612ee'
+          tester_email='wscott2k8@gmail.com'
+          group_name='Almost Human Internal Testers'
+          key=os.environ['APP_STORE_CONNECT_API_KEY'].replace('\\n','\n')
+          token=jwt.encode(
+            {'iss':os.environ['APP_STORE_CONNECT_ISSUER_ID'],'iat':int(time.time()),'exp':int(time.time())+900,'aud':'appstoreconnect-v1'},
+            key,algorithm='ES256',headers={'kid':os.environ['APP_STORE_CONNECT_KEY_ID'],'typ':'JWT'})
+          headers={'Authorization':f'Bearer {token}','Content-Type':'application/json'}
+
+          def request(method,path,params=None,body=None,accepted=(200,201,204)):
+            url='https://api.appstoreconnect.apple.com'+path
+            if params: url += '?' + urllib.parse.urlencode(params)
+            data=json.dumps(body).encode() if body is not None else None
+            req=urllib.request.Request(url,headers=headers,data=data,method=method)
+            try:
+              with urllib.request.urlopen(req,timeout=30) as r:
+                raw=r.read()
+                return r.status, (json.loads(raw) if raw else None)
+            except urllib.error.HTTPError as e:
+              raw=e.read().decode(errors='replace')
+              try: payload=json.loads(raw) if raw else None
+              except Exception: payload={'raw':raw[:1000]}
+              if e.code in accepted:
+                return e.code,payload
+              raise RuntimeError(f'{method} {path} failed HTTP {e.code}: {json.dumps(payload)[:1500]}')
+
+          def get(path,params=None): return request('GET',path,params=params,accepted=(200,))[1]
+
+          groups=get('/v1/betaGroups',{'filter[app]':app_id,'limit':'200'}).get('data',[])
+          matching=[g for g in groups if g.get('attributes',{}).get('name')==group_name and g.get('attributes',{}).get('isInternalGroup') is True]
+          group_created=False
+          if matching:
+            group=matching[0]
+          else:
+            body={'data':{'type':'betaGroups','attributes':{'name':group_name,'isInternalGroup':True,'hasAccessToAllBuilds':True,'feedbackEnabled':True},'relationships':{'app':{'data':{'type':'apps','id':app_id}}}}}
+            _,payload=request('POST','/v1/betaGroups',body=body,accepted=(201,))
+            group=payload['data']
+            group_created=True
+          group_id=group['id']
+
+          existing_build_ids=[x['id'] for x in get(f'/v1/betaGroups/{group_id}/relationships/builds',{'limit':'200'}).get('data',[])]
+          build_added=False
+          if build_id not in existing_build_ids:
+            request('POST',f'/v1/betaGroups/{group_id}/relationships/builds',body={'data':[{'type':'builds','id':build_id}]},accepted=(204,409))
+            build_added=True
+
+          testers=get('/v1/betaTesters',{'filter[email]':tester_email,'limit':'200'}).get('data',[])
+          if not testers:
+            raise RuntimeError(f'No existing TestFlight tester identity found for {tester_email}')
+
+          candidates=[]
+          for t in testers:
+            tid=t['id']
+            try:
+              app_ids=[x['id'] for x in get(f'/v1/betaTesters/{tid}/relationships/apps',{'limit':'200'}).get('data',[])]
+            except Exception:
+              app_ids=[]
+            score=(1000 if '6785736750' in app_ids else 0)+len(app_ids)
+            candidates.append((score,tid,t.get('attributes',{}),app_ids))
+          candidates.sort(reverse=True,key=lambda x:x[0])
+
+          current_tester_ids=[x['id'] for x in get(f'/v1/betaGroups/{group_id}/relationships/betaTesters',{'limit':'200'}).get('data',[])]
+          selected=None
+          tester_added=False
+          for score,tid,attrs,app_ids in candidates:
+            if tid in current_tester_ids:
+              selected=(tid,attrs,app_ids)
+              break
+            try:
+              request('POST',f'/v1/betaGroups/{group_id}/relationships/betaTesters',body={'data':[{'type':'betaTesters','id':tid}]},accepted=(204,409))
+              verified=[x['id'] for x in get(f'/v1/betaGroups/{group_id}/relationships/betaTesters',{'limit':'200'}).get('data',[])]
+              if tid in verified:
+                selected=(tid,attrs,app_ids)
+                tester_added=True
+                break
+            except Exception:
+              continue
+          if selected is None:
+            body={'data':{'type':'betaTesters','attributes':{'email':tester_email,'firstName':'Will','lastName':'Scott'},'relationships':{'betaGroups':{'data':[{'type':'betaGroups','id':group_id}]}}}}
+            _,payload=request('POST','/v1/betaTesters',body=body,accepted=(201,))
+            t=payload['data']
+            selected=(t['id'],t.get('attributes',{}),[])
+            tester_added=True
+
+          final_group=get(f'/v1/betaGroups/{group_id}')['data']
+          final_build_ids=[x['id'] for x in get(f'/v1/betaGroups/{group_id}/relationships/builds',{'limit':'200'}).get('data',[])]
+          final_tester_ids=[x['id'] for x in get(f'/v1/betaGroups/{group_id}/relationships/betaTesters',{'limit':'200'}).get('data',[])]
+          selected_id,selected_attrs,selected_apps=selected
+          if build_id not in final_build_ids:
+            raise RuntimeError('Target build was not attached to the internal group.')
+          if selected_id not in final_tester_ids:
+            raise RuntimeError('Selected tester was not attached to the internal group.')
+          if final_group.get('attributes',{}).get('isInternalGroup') is not True:
+            raise RuntimeError('Created group is not internal.')
+
+          result={
+            'status':'INTERNAL_TESTING_ENABLED',
+            'ascAppId':app_id,
+            'bundleId':bundle_id,
+            'appVersion':'1.0.0',
+            'buildNumber':'2',
+            'appleBuildResourceId':build_id,
+            'groupId':group_id,
+            'groupName':final_group.get('attributes',{}).get('name'),
+            'isInternalGroup':final_group.get('attributes',{}).get('isInternalGroup'),
+            'hasAccessToAllBuilds':final_group.get('attributes',{}).get('hasAccessToAllBuilds'),
+            'groupCreated':group_created,
+            'buildAttached':build_id in final_build_ids,
+            'buildAddedThisRun':build_added,
+            'testerEmail':tester_email,
+            'testerId':selected_id,
+            'testerFirstName':selected_attrs.get('firstName'),
+            'testerLastName':selected_attrs.get('lastName'),
+            'testerAddedThisRun':tester_added,
+            'testerAttached':selected_id in final_tester_ids,
+            'buildsRun':0,
+            'uploadsRun':0,
+            'internalGroupChangesRun':1,
+            'testerAssignmentsRun':1,
+            'note':'Build 1.0.0 (2) is attached to an internal TestFlight group containing the requested tester email.'
+          }
+          Path('ALMOST_HUMAN_INTERNAL_TESTING_RECORD.json').write_text(json.dumps(result,indent=2)+'\n')
+          PY
+
+      - name: Save sanitized internal testing receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'Almost Human Internal Testing'
+          git config user.email 'wscott2k26@users.noreply.github.com'
+          git add ALMOST_HUMAN_INTERNAL_TESTING_RECORD.json 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo 'No completed setup receipt produced.'
+          else
+            git commit -m 'Record Almost Human internal TestFlight setup'
+            git pull --rebase --autostash origin master
+            git push origin HEAD:master
+          fi
