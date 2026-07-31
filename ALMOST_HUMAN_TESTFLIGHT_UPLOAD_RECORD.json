@@ -1,0 +1,12 @@
+{
+  "status": "UPLOAD_ACCEPTED_BY_APPLE",
+  "bundleId": "com.stormandme.almosthuman",
+  "appVersion": "1.0.0",
+  "buildNumber": "2",
+  "easBuildId": "a83059b6-7063-4b96-bf40-e5c95e1bbe29",
+  "ascAppId": "6796814542",
+  "ipaSha256": "1a3610746e892a57c8a5ed9422f6d2b0e8cc77fc61af7aec0be7eaec78a920a7",
+  "newBuildsRun": 0,
+  "testFlightUploadsRun": 1,
+  "note": "Apple accepted the exact existing IPA for App Store Connect processing. TestFlight visibility follows Apple processing."
+}
