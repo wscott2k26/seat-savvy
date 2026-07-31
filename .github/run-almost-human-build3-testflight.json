@@ -1,0 +1,16 @@
+{
+  "operation": "UPLOAD_BUILD3_ONCE",
+  "confirm": "UPLOAD_BUILD3_ONCE",
+  "requestedBy": "Willy Will via ChatGPT",
+  "requestedAt": "2026-07-31T21:23:00Z",
+  "ascAppId": "6796814542",
+  "bundleId": "com.stormandme.almosthuman",
+  "easBuildId": "61c38061-c2e0-43f5-b8a2-43b0af8cd187",
+  "appVersion": "1.0.0",
+  "buildNumber": "3",
+  "newBuildsAuthorized": 0,
+  "testFlightUploadsAuthorized": 1,
+  "publicReleaseAuthorized": 0,
+  "internalGroupBuildAttachmentAuthorized": 1,
+  "testerAssignmentsAuthorized": 0
+}
