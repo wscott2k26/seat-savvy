@@ -1,0 +1,105 @@
+{
+  "status": "TESTER_ASSIGNMENT_NEEDED",
+  "ascAppId": "6796814542",
+  "bundleId": "com.stormandme.almosthuman",
+  "appVersion": "1.0.0",
+  "buildNumber": "2",
+  "appleBuildResourceId": "134dbe23-97ef-4fca-bcfc-18b744f612ee",
+  "testerEmail": "wscott2k8@gmail.com",
+  "groups": [],
+  "matchingTesters": [
+    {
+      "id": "c6da3d3c-18e6-4419-a8da-b0e0149c9610",
+      "email": "wscott2k8@gmail.com",
+      "firstName": "Will",
+      "lastName": "Scott",
+      "inviteType": "EMAIL",
+      "state": null
+    },
+    {
+      "id": "f3efd9f2-100c-400a-8f48-ae2cbdc65aae",
+      "email": "wscott2k8@gmail.com",
+      "firstName": "william",
+      "lastName": "scott",
+      "inviteType": "EMAIL",
+      "state": null
+    },
+    {
+      "id": "f9e279e8-05f4-43fd-aaab-994fe95da6fc",
+      "email": "wscott2k8@gmail.com",
+      "firstName": "Will",
+      "lastName": "Scott",
+      "inviteType": "EMAIL",
+      "state": null
+    },
+    {
+      "id": "fbfec2a2-cd6f-4a89-8cac-08f6acc0b749",
+      "email": "wscott2k8@gmail.com",
+      "firstName": "William",
+      "lastName": "Scott",
+      "inviteType": "EMAIL",
+      "state": null
+    },
+    {
+      "id": "1403cb15-1f6b-4afb-9986-d2cdfc7bbc3f",
+      "email": "wscott2k8@gmail.com",
+      "firstName": "Will",
+      "lastName": "Scott",
+      "inviteType": "EMAIL",
+      "state": null
+    },
+    {
+      "id": "2bb454f2-d57c-4f4c-a208-899155214a63",
+      "email": "wscott2k8@gmail.com",
+      "firstName": "Will",
+      "lastName": "Scott",
+      "inviteType": "EMAIL",
+      "state": null
+    },
+    {
+      "id": "3302a6b2-92df-4ce7-acdf-578f92b15462",
+      "email": "wscott2k8@gmail.com",
+      "firstName": "Will",
+      "lastName": "Scott",
+      "inviteType": "EMAIL",
+      "state": null
+    },
+    {
+      "id": "39335595-b1c5-4a22-9d89-c57681716e2c",
+      "email": "wscott2k8@gmail.com",
+      "firstName": "Will",
+      "lastName": "Scott",
+      "inviteType": "EMAIL",
+      "state": null
+    },
+    {
+      "id": "5bdf4d86-acc7-4b82-969c-91aeb543f121",
+      "email": "wscott2k8@gmail.com",
+      "firstName": "Will",
+      "lastName": "Scott",
+      "inviteType": "EMAIL",
+      "state": null
+    },
+    {
+      "id": "60efb687-b2f1-4c02-aa30-fa3b3c59259f",
+      "email": "wscott2k8@gmail.com",
+      "firstName": "Will",
+      "lastName": "Scott",
+      "inviteType": "EMAIL",
+      "state": null
+    },
+    {
+      "id": "6e319182-aaa6-4d52-b27a-e368f2d67a5d",
+      "email": "wscott2k8@gmail.com",
+      "firstName": "Will",
+      "lastName": "Scott",
+      "inviteType": "EMAIL",
+      "state": null
+    }
+  ],
+  "automaticInternalGroupCount": 0,
+  "explicitEligibleGroupCount": 0,
+  "buildsRun": 0,
+  "uploadsRun": 0,
+  "testerChangesRun": 0
+}
