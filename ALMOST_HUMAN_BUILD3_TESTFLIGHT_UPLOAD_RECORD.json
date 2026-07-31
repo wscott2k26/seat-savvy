@@ -1,0 +1,13 @@
+{
+  "status": "UPLOAD_ACCEPTED_BY_APPLE",
+  "bundleId": "com.stormandme.almosthuman",
+  "appVersion": "1.0.0",
+  "buildNumber": "3",
+  "easBuildId": "61c38061-c2e0-43f5-b8a2-43b0af8cd187",
+  "ascAppId": "6796814542",
+  "ipaSha256": "1d536fda9d40a05c2d594d41bbb73ce4d6ebc3a72e6513f140a36bf5287ed882",
+  "newBuildsRun": 0,
+  "testFlightUploadsRun": 1,
+  "publicReleasesRun": 0,
+  "note": "Apple accepted the exact existing Almost Human 1.0.0 (3) IPA for TestFlight processing."
+}
