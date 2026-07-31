@@ -1,6 +1,7 @@
 {
   "operation": "READ_ONLY_UPLOAD_STATUS",
-  "requestedAt": "2026-07-31T19:08:00Z",
+  "requestedAt": "2026-07-31T19:13:00Z",
+  "attempt": 2,
   "buildsAuthorized": 0,
   "uploadsAuthorized": 0
 }
