@@ -1,0 +1,12 @@
+{
+  "operation": "UPLOAD_EXISTING_IPA_ONCE",
+  "confirm": "UPLOAD_EXISTING_IPA_ONCE",
+  "requestedBy": "Willy Will via ChatGPT",
+  "requestedAt": "2026-07-31T18:47:00Z",
+  "bundleId": "com.stormandme.almosthuman",
+  "easBuildId": "a83059b6-7063-4b96-bf40-e5c95e1bbe29",
+  "appVersion": "1.0.0",
+  "buildNumber": "2",
+  "newBuildsAuthorized": 0,
+  "testFlightUploadsAuthorized": 1
+}
