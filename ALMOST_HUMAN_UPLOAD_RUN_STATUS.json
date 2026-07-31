@@ -2,6 +2,17 @@
   "workflow": "almost-human-testflight-bridge.yml",
   "runs": [
     {
+      "id": 30657974465,
+      "status": "in_progress",
+      "conclusion": null,
+      "event": "push",
+      "headSha": "3b9ca791c0bc106661679d5a86c33cc053611d25",
+      "createdAt": "2026-07-31T19:08:49Z",
+      "updatedAt": "2026-07-31T19:08:54Z",
+      "runAttempt": 1,
+      "htmlUrl": "https://github.com/wscott2k26/seat-savvy/actions/runs/30657974465"
+    },
+    {
       "id": 30657686340,
       "status": "completed",
       "conclusion": "failure",
