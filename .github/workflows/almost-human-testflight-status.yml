@@ -1,0 +1,113 @@
+name: Almost Human TestFlight Read-Only Status
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - '.github/run-almost-human-testflight-status.json'
+
+permissions:
+  contents: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Validate read-only request
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          t=json.load(open('.github/run-almost-human-testflight-status.json'))
+          assert t['operation']=='READ_ONLY_TESTFLIGHT_STATUS'
+          assert str(t['ascAppId'])=='6796814542'
+          assert t['bundleId']=='com.stormandme.almosthuman'
+          assert t['appVersion']=='1.0.0'
+          assert str(t['buildNumber'])=='2'
+          assert t['buildsAuthorized']==0
+          assert t['uploadsAuthorized']==0
+          PY
+
+      - name: Query exact Apple build and beta status
+        shell: bash
+        env:
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet pyjwt cryptography
+          python3 - <<'PY'
+          import json, os, time, urllib.parse, urllib.request, urllib.error
+          from pathlib import Path
+          import jwt
+
+          app_id='6796814542'
+          build_number='2'
+          key=os.environ['APP_STORE_CONNECT_API_KEY'].replace('\\n','\n')
+          token=jwt.encode(
+            {'iss':os.environ['APP_STORE_CONNECT_ISSUER_ID'],'iat':int(time.time()),'exp':int(time.time())+900,'aud':'appstoreconnect-v1'},
+            key,algorithm='ES256',headers={'kid':os.environ['APP_STORE_CONNECT_KEY_ID'],'typ':'JWT'})
+          params={
+            'filter[app]':app_id,
+            'filter[version]':build_number,
+            'include':'preReleaseVersion,buildBetaDetail',
+            'limit':'10'
+          }
+          url='https://api.appstoreconnect.apple.com/v1/builds?'+urllib.parse.urlencode(params)
+          req=urllib.request.Request(url,headers={'Authorization':f'Bearer {token}'})
+          try:
+            with urllib.request.urlopen(req,timeout=30) as r:
+              payload=json.load(r)
+            included={x['id']:x for x in payload.get('included',[])}
+            rows=[]
+            for b in payload.get('data',[]):
+              a=b.get('attributes',{})
+              rel=b.get('relationships',{})
+              pre_id=((rel.get('preReleaseVersion') or {}).get('data') or {}).get('id')
+              beta_id=((rel.get('buildBetaDetail') or {}).get('data') or {}).get('id')
+              pre=(included.get(pre_id) or {}).get('attributes',{})
+              beta=(included.get(beta_id) or {}).get('attributes',{})
+              rows.append({
+                'appleBuildResourceId':b.get('id'),
+                'buildNumber':a.get('version'),
+                'processingState':a.get('processingState'),
+                'uploadedDate':a.get('uploadedDate'),
+                'expired':a.get('expired'),
+                'minOsVersion':a.get('minOsVersion'),
+                'appVersion':pre.get('version'),
+                'platform':pre.get('platform'),
+                'internalBuildState':beta.get('internalBuildState'),
+                'externalBuildState':beta.get('externalBuildState'),
+                'autoNotifyEnabled':beta.get('autoNotifyEnabled')
+              })
+            if not rows:
+              result={'status':'NOT_VISIBLE_YET','ascAppId':app_id,'bundleId':'com.stormandme.almosthuman','appVersion':'1.0.0','buildNumber':build_number,'buildsRun':0,'uploadsRun':0,'matches':[]}
+            else:
+              exact=[r for r in rows if str(r.get('buildNumber'))==build_number and r.get('appVersion')=='1.0.0'] or rows
+              r=exact[0]
+              ready=(r.get('processingState')=='VALID' and r.get('internalBuildState') in ('READY_FOR_BETA_TESTING','IN_BETA_TESTING'))
+              result={'status':'READY_FOR_INTERNAL_TESTING' if ready else 'APPLE_PROCESSING_OR_ACTION_NEEDED','ascAppId':app_id,'bundleId':'com.stormandme.almosthuman','appVersion':'1.0.0','buildNumber':build_number,'buildsRun':0,'uploadsRun':0,'matches':exact}
+          except Exception as e:
+            result={'status':'ERROR','ascAppId':app_id,'bundleId':'com.stormandme.almosthuman','appVersion':'1.0.0','buildNumber':build_number,'buildsRun':0,'uploadsRun':0,'errorType':type(e).__name__,'error':str(e)}
+          Path('ALMOST_HUMAN_TESTFLIGHT_STATUS.json').write_text(json.dumps(result,indent=2)+'\n')
+          PY
+
+      - name: Save sanitized TestFlight status
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'Almost Human TestFlight Status'
+          git config user.email 'wscott2k26@users.noreply.github.com'
+          git add ALMOST_HUMAN_TESTFLIGHT_STATUS.json
+          git commit -m 'Record Almost Human TestFlight processing status'
+          git pull --rebase --autostash origin master
+          git push origin HEAD:master
