@@ -1,10 +1,24 @@
 {
-  "status": "NOT_VISIBLE_YET",
+  "status": "READY_FOR_INTERNAL_TESTING",
   "ascAppId": "6796814542",
   "bundleId": "com.stormandme.almosthuman",
   "appVersion": "1.0.0",
   "buildNumber": "2",
   "buildsRun": 0,
   "uploadsRun": 0,
-  "matches": []
+  "matches": [
+    {
+      "appleBuildResourceId": "134dbe23-97ef-4fca-bcfc-18b744f612ee",
+      "buildNumber": "2",
+      "processingState": "VALID",
+      "uploadedDate": "2026-07-31T12:11:12-07:00",
+      "expired": false,
+      "minOsVersion": "15.1",
+      "appVersion": "1.0.0",
+      "platform": "IOS",
+      "internalBuildState": "READY_FOR_BETA_TESTING",
+      "externalBuildState": "READY_FOR_BETA_SUBMISSION",
+      "autoNotifyEnabled": true
+    }
+  ]
 }
