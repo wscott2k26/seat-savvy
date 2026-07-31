@@ -1,0 +1,10 @@
+{
+  "operation": "READ_ONLY_TESTFLIGHT_STATUS",
+  "requestedAt": "2026-07-31T19:15:00Z",
+  "ascAppId": "6796814542",
+  "bundleId": "com.stormandme.almosthuman",
+  "appVersion": "1.0.0",
+  "buildNumber": "2",
+  "buildsAuthorized": 0,
+  "uploadsAuthorized": 0
+}
