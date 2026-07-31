@@ -1,0 +1,77 @@
+name: Almost Human ASC Read-Only Lookup
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - '.github/run-almost-human-asc-lookup.json'
+
+permissions:
+  contents: write
+
+jobs:
+  lookup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Validate zero-mutation authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          t=json.load(open('.github/run-almost-human-asc-lookup.json'))
+          assert t['operation']=='READ_ONLY_ASC_LOOKUP'
+          assert t['bundleId']=='com.stormandme.almosthuman'
+          assert t['buildsAuthorized']==0
+          assert t['uploadsAuthorized']==0
+          PY
+
+      - name: Query App Store Connect by exact bundle ID
+        shell: bash
+        env:
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          test -n "${APP_STORE_CONNECT_API_KEY:-}"
+          test -n "${APP_STORE_CONNECT_KEY_ID:-}"
+          test -n "${APP_STORE_CONNECT_ISSUER_ID:-}"
+          python3 -m pip install --quiet pyjwt cryptography
+          python3 - <<'PY'
+          import json, os, time, urllib.parse, urllib.request
+          from pathlib import Path
+          import jwt
+          bundle='com.stormandme.almosthuman'
+          key=os.environ['APP_STORE_CONNECT_API_KEY'].replace('\\n','\n')
+          token=jwt.encode(
+            {'iss':os.environ['APP_STORE_CONNECT_ISSUER_ID'],'iat':int(time.time()),'exp':int(time.time())+900,'aud':'appstoreconnect-v1'},
+            key,algorithm='ES256',headers={'kid':os.environ['APP_STORE_CONNECT_KEY_ID'],'typ':'JWT'})
+          url='https://api.appstoreconnect.apple.com/v1/apps?'+urllib.parse.urlencode({'filter[bundleId]':bundle,'limit':'10'})
+          req=urllib.request.Request(url,headers={'Authorization':f'Bearer {token}'})
+          try:
+            with urllib.request.urlopen(req,timeout=30) as r: payload=json.load(r)
+            matches=[{'id':x['id'],'name':x.get('attributes',{}).get('name'),'bundleId':x.get('attributes',{}).get('bundleId'),'sku':x.get('attributes',{}).get('sku')} for x in payload.get('data',[]) if x.get('attributes',{}).get('bundleId')==bundle]
+            result={'status':'PASSED','bundleId':bundle,'matchCount':len(matches),'matches':matches,'buildsRun':0,'uploadsRun':0}
+          except Exception as e:
+            result={'status':'ERROR','bundleId':bundle,'matchCount':None,'matches':[],'buildsRun':0,'uploadsRun':0,'errorType':type(e).__name__,'error':str(e)}
+          Path('ALMOST_HUMAN_ASC_LOOKUP_FAST.json').write_text(json.dumps(result,indent=2)+'\n')
+          PY
+
+      - name: Save sanitized lookup receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'Almost Human ASC Lookup'
+          git config user.email 'wscott2k26@users.noreply.github.com'
+          git add ALMOST_HUMAN_ASC_LOOKUP_FAST.json
+          git commit -m 'Record Almost Human App Store Connect lookup'
+          git pull --rebase --autostash origin master
+          git push origin HEAD:master
