@@ -1,0 +1,16 @@
+{
+  "operation": "ENABLE_INTERNAL_TESTING_ONCE",
+  "confirm": "ENABLE_INTERNAL_TESTING_ONCE",
+  "requestedBy": "Willy Will via ChatGPT",
+  "requestedAt": "2026-07-31T19:22:00Z",
+  "ascAppId": "6796814542",
+  "bundleId": "com.stormandme.almosthuman",
+  "appVersion": "1.0.0",
+  "buildNumber": "2",
+  "appleBuildResourceId": "134dbe23-97ef-4fca-bcfc-18b744f612ee",
+  "testerEmail": "wscott2k8@gmail.com",
+  "buildsAuthorized": 0,
+  "uploadsAuthorized": 0,
+  "internalGroupChangesAuthorized": 1,
+  "testerAssignmentsAuthorized": 1
+}
