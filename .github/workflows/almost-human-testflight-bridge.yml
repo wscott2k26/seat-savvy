@@ -18,6 +18,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 45
     env:
+      EXPECTED_ASC_APP_ID: '6796814542'
       EXPECTED_BUNDLE_ID: com.stormandme.almosthuman
       EXPECTED_BUILD_ID: a83059b6-7063-4b96-bf40-e5c95e1bbe29
       EXPECTED_APP_VERSION: 1.0.0
@@ -32,22 +33,48 @@ jobs:
           fetch-depth: 0
 
       - name: Validate exact one-upload authorization
+        id: authorize
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import json
+          import json, os
           from pathlib import Path
           t=json.loads(Path('.github/run-almost-human-testflight.json').read_text())
           assert t['operation']=='UPLOAD_EXISTING_IPA_ONCE'
           assert t['confirm']=='UPLOAD_EXISTING_IPA_ONCE'
-          assert t['bundleId']=='com.stormandme.almosthuman'
-          assert t['easBuildId']=='a83059b6-7063-4b96-bf40-e5c95e1bbe29'
-          assert t['appVersion']=='1.0.0'
-          assert str(t['buildNumber'])=='2'
+          assert str(t['ascAppId'])==os.environ['EXPECTED_ASC_APP_ID']
+          assert t['bundleId']==os.environ['EXPECTED_BUNDLE_ID']
+          assert t['easBuildId']==os.environ['EXPECTED_BUILD_ID']
+          assert t['appVersion']==os.environ['EXPECTED_APP_VERSION']
+          assert str(t['buildNumber'])==os.environ['EXPECTED_BUILD_NUMBER']
           assert t['newBuildsAuthorized']==0
           assert t['testFlightUploadsAuthorized']==1
+
+          lookup=json.loads(Path('ALMOST_HUMAN_ASC_LOOKUP_FAST.json').read_text())
+          assert lookup['status']=='PASSED'
+          assert lookup['bundleId']==os.environ['EXPECTED_BUNDLE_ID']
+          assert lookup['matchCount']==1
+          match=lookup['matches'][0]
+          assert str(match['id'])==os.environ['EXPECTED_ASC_APP_ID']
+          assert match['bundleId']==os.environ['EXPECTED_BUNDLE_ID']
+          assert match['name']=='Almost Human: The Haven'
+          print('Exact App Store Connect identity and upload authorization verified.')
           PY
+          echo "asc_app_id=$EXPECTED_ASC_APP_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Refuse duplicate accepted upload
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f ALMOST_HUMAN_TESTFLIGHT_UPLOAD_RECORD.json ]]; then
+            python3 - <<'PY'
+          import json
+          r=json.load(open('ALMOST_HUMAN_TESTFLIGHT_UPLOAD_RECORD.json'))
+          if r.get('status')=='UPLOAD_ACCEPTED_BY_APPLE':
+              raise SystemExit('This exact IPA already has an Apple-accepted upload receipt; refusing duplicate upload.')
+          PY
+          fi
 
       - name: Verify Apple API secrets are available without exposing them
         shell: bash
@@ -61,43 +88,6 @@ jobs:
           test -n "${APP_STORE_CONNECT_KEY_ID:-}"
           test -n "${APP_STORE_CONNECT_ISSUER_ID:-}"
           echo 'Apple API secret presence verified.'
-
-      - name: Locate exact App Store Connect record by bundle ID
-        id: locate
-        shell: bash
-        env:
-          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
-          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
-          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-        run: |
-          set -euo pipefail
-          python3 -m pip install --quiet pyjwt cryptography
-          python3 - <<'PY'
-          import json, os, time, urllib.parse, urllib.request
-          from pathlib import Path
-          import jwt
-
-          key=os.environ['APP_STORE_CONNECT_API_KEY'].replace('\\n','\n')
-          token=jwt.encode(
-              {'iss':os.environ['APP_STORE_CONNECT_ISSUER_ID'],'iat':int(time.time()),'exp':int(time.time())+900,'aud':'appstoreconnect-v1'},
-              key,
-              algorithm='ES256',
-              headers={'kid':os.environ['APP_STORE_CONNECT_KEY_ID'],'typ':'JWT'},
-          )
-          bundle=os.environ['EXPECTED_BUNDLE_ID']
-          url='https://api.appstoreconnect.apple.com/v1/apps?'+urllib.parse.urlencode({'filter[bundleId]':bundle,'limit':'10'})
-          req=urllib.request.Request(url,headers={'Authorization':f'Bearer {token}'})
-          with urllib.request.urlopen(req,timeout=30) as r:
-              payload=json.load(r)
-          matches=[{'id':x['id'],'name':x.get('attributes',{}).get('name'),'bundleId':x.get('attributes',{}).get('bundleId'),'sku':x.get('attributes',{}).get('sku')} for x in payload.get('data',[]) if x.get('attributes',{}).get('bundleId')==bundle]
-          result={'operation':'READ_ONLY_APP_RECORD_LOOKUP','bundleId':bundle,'matchCount':len(matches),'matches':matches,'newBuildsRun':0,'uploadsRun':0}
-          Path('ALMOST_HUMAN_ASC_LOOKUP.json').write_text(json.dumps(result,indent=2)+'\n')
-          if len(matches)!=1:
-              raise SystemExit(f'Expected exactly one App Store Connect app record for {bundle}; found {len(matches)}')
-          Path('/tmp/asc_app_id').write_text(matches[0]['id'])
-          print('ASC record found for exact bundle ID.')
-          PY
-          echo "asc_app_id=$(cat /tmp/asc_app_id)" >> "$GITHUB_OUTPUT"
 
       - name: Download and verify exact signed IPA
         shell: bash
@@ -132,7 +122,7 @@ jobs:
         env:
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-          ASC_APP_ID: ${{ steps.locate.outputs.asc_app_id }}
+          ASC_APP_ID: ${{ steps.authorize.outputs.asc_app_id }}
         run: |
           set -euo pipefail
           xcrun altool --upload-app \
@@ -160,18 +150,18 @@ jobs:
           Path('ALMOST_HUMAN_TESTFLIGHT_UPLOAD_RECORD.json').write_text(json.dumps(result,indent=2)+'\n')
           PY
 
-      - name: Save sanitized lookup and upload receipts
+      - name: Save sanitized upload receipt
         if: always()
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'Almost Human Release Bridge'
           git config user.email 'wscott2k26@users.noreply.github.com'
-          git add ALMOST_HUMAN_ASC_LOOKUP.json ALMOST_HUMAN_TESTFLIGHT_UPLOAD_RECORD.json 2>/dev/null || true
+          git add ALMOST_HUMAN_TESTFLIGHT_UPLOAD_RECORD.json 2>/dev/null || true
           if git diff --cached --quiet; then
-            echo 'No receipt produced yet.'
+            echo 'No accepted-upload receipt produced.'
           else
-            git commit -m 'Record Almost Human App Store Connect upload result'
+            git commit -m 'Record Almost Human TestFlight upload acceptance'
             git pull --rebase --autostash origin master
             git push origin HEAD:master
           fi
