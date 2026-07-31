@@ -16,7 +16,7 @@
       "minOsVersion": "15.1",
       "appVersion": "1.0.0",
       "platform": "IOS",
-      "internalBuildState": "READY_FOR_BETA_TESTING",
+      "internalBuildState": "IN_BETA_TESTING",
       "externalBuildState": "READY_FOR_BETA_SUBMISSION",
       "autoNotifyEnabled": true
     }
