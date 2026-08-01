@@ -1,0 +1,18 @@
+{
+  "operation": "READ_ONLY_BUILD4_LANE_STATUS",
+  "buildsRun": 0,
+  "uploadsRun": 0,
+  "runs": [
+    {
+      "runId": 30683789695,
+      "status": "in_progress",
+      "conclusion": null,
+      "event": "push",
+      "headSha": "ac06db003c433665e13fce5540a056a55df8cb90",
+      "createdAt": "2026-08-01T04:21:37Z",
+      "updatedAt": "2026-08-01T04:23:38Z",
+      "htmlUrl": "https://github.com/wscott2k26/seat-savvy/actions/runs/30683789695",
+      "runAttempt": 1
+    }
+  ]
+}
