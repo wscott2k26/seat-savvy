@@ -1,0 +1,14 @@
+{
+  "status": "UPLOAD_ACCEPTED_BY_APPLE",
+  "bundleId": "com.stormandme.almosthuman",
+  "appVersion": "1.0.0",
+  "buildNumber": "4",
+  "easBuildId": "9af3b9e9-eec0-473a-a59e-12fdeff56e42",
+  "ascAppId": "6796814542",
+  "ipaSha256": "184f88d58ba69141bf8427acfff3c3dcd3550ebdc4cf5bcb6633fdb7485f4ce4",
+  "applePrecheckMatches": [],
+  "newBuildsRun": 0,
+  "testFlightUploadsRun": 1,
+  "publicReleasesRun": 0,
+  "note": "The exact existing Almost Human 1.0.0 (4) binary is in Apple processing. No public release was requested."
+}
