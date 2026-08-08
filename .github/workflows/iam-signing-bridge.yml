@@ -1,0 +1,73 @@
+name: I AM Apple Signing Bridge
+
+on:
+  push:
+    branches:
+      - iam-signing-bridge-2026-08-08
+
+permissions:
+  contents: read
+
+jobs:
+  bridge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Verify existing Apple secrets without printing them
+        shell: bash
+        env:
+          ASC_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$ASC_KEY"
+          test -n "$ASC_KEY_ID"
+          test -n "$ASC_ISSUER_ID"
+          test -n "$APPLE_TEAM_ID"
+          echo 'APPLE_SECRET_SET_PRESENT=yes' > /tmp/bridge-status.txt
+          if [ "$ASC_KEY_ID" = 'JR4QT262B3' ]; then echo 'EXPECTED_ASC_KEY_ID=yes' >> /tmp/bridge-status.txt; else echo 'EXPECTED_ASC_KEY_ID=no' >> /tmp/bridge-status.txt; fi
+          if [ "$ASC_ISSUER_ID" = '7a563c78-d27a-4fe6-81b2-51072d4b4a46' ]; then echo 'EXPECTED_ASC_ISSUER=yes' >> /tmp/bridge-status.txt; else echo 'EXPECTED_ASC_ISSUER=no' >> /tmp/bridge-status.txt; fi
+          if [ "$APPLE_TEAM_ID" = 'F45X8Q5Z3G' ]; then echo 'I_AM_APPLE_TEAM_MATCH=yes' >> /tmp/bridge-status.txt; else echo 'I_AM_APPLE_TEAM_MATCH=no' >> /tmp/bridge-status.txt; fi
+
+      - name: Encrypt ASC API key for private transfer
+        shell: bash
+        env:
+          ASC_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+        run: |
+          set -euo pipefail
+          cat > /tmp/bridge-public.pem <<'PUBKEY'
+          -----BEGIN PUBLIC KEY-----
+          MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsGuJwMMXi4W6NfotVuw4
+          vRLQOSuercEV7YW9QF4ua8znykhyJ4pwkbpGg5V1luVKYZrIv4WvkT0GGwibZUkv
+          RBPp/nQMnGEoQ6XDHxnqKIaC1K46B6LHWtkaUNmChp9JczvJILQHvg+YWB1qh50O
+          9UxHz/qw/psB//mIBMa4z6iJU4b4A+WsbXCST4LbezDRzD3j2/+AU7yL9WRgJsAe
+          XjC7h+Zv7NNkepNQFS8wFqiwOxc+3lKKyYPqbPMVxaO6aPlGhdoTKbU89lzjEb4+
+          fAxjMOoZRfN//vfaKUqc/mhZ6UcCsxeiR79VMiPnq3ofnNIcO6B/1Ee1OKZChtwv
+          n77sgLpoFYMCzLhKxAApnmZBCv30+pis5gwBEnfHpFuW7q4wQHY5Y+HP/k/gDXrB
+          5xHGIvXZG9anWy7ndghkNXOECieagMIU8KYLGyk2htti2k6f76VyOpovk/lBoNWo
+          SVQH/v4ROy7uw9L8uRuJ2w8SFSM3GT3E35xzKtkHqpk8dOFws3qkRWbNH6nYHuxI
+          iAsqZzL5dWru5D4ZdyWiPEMqzTRCEqFzFOOmlLHhCpgOb9THOy5yLkBIJ24PhdP2
+          f9z+rN7NfT/dYOQpbb6ziEKg/v+QyhjaZ9kA51mY645HuAdno+XXOPdSI+YhWbjl
+          E0lk8+H/+SoV1jYr2hpledMCAwEAAQ==
+          -----END PUBLIC KEY-----
+          PUBKEY
+          umask 077
+          printf '%s' "$ASC_KEY" > /tmp/asc-key.p8
+          openssl rand 32 > /tmp/bridge-aes.key
+          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 200000 -in /tmp/asc-key.p8 -out /tmp/asc-key.p8.enc -pass file:/tmp/bridge-aes.key
+          openssl pkeyutl -encrypt -pubin -inkey /tmp/bridge-public.pem -in /tmp/bridge-aes.key -out /tmp/bridge-aes.key.enc -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256
+          sha256sum /tmp/asc-key.p8.enc /tmp/bridge-aes.key.enc >> /tmp/bridge-status.txt
+          rm -f /tmp/asc-key.p8 /tmp/bridge-aes.key
+
+      - name: Upload encrypted one-day bridge artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: iam-apple-signing-bridge-cipher
+          path: |
+            /tmp/asc-key.p8.enc
+            /tmp/bridge-aes.key.enc
+            /tmp/bridge-status.txt
+          retention-days: 1
+          if-no-files-found: error
