@@ -31,6 +31,41 @@ jobs:
           if [ "$ASC_ISSUER_ID" = '7a563c78-d27a-4fe6-81b2-51072d4b4a46' ]; then echo 'EXPECTED_ASC_ISSUER=yes' >> /tmp/bridge-status.txt; else echo 'EXPECTED_ASC_ISSUER=no' >> /tmp/bridge-status.txt; fi
           if [ "$APPLE_TEAM_ID" = 'F45X8Q5Z3G' ]; then echo 'I_AM_APPLE_TEAM_MATCH=yes' >> /tmp/bridge-status.txt; else echo 'I_AM_APPLE_TEAM_MATCH=no' >> /tmp/bridge-status.txt; fi
 
+      - name: Probe I AM visibility through Apple API without leaking credentials
+        shell: bash
+        env:
+          ASC_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          umask 077
+          printf '%s' "$ASC_KEY" > /tmp/asc-probe.p8
+          export ASC_KEY_ID ASC_ISSUER_ID
+          JWT=$(node <<'NODE'
+          const fs = require('fs');
+          const crypto = require('crypto');
+          const b64u = x => Buffer.from(x).toString('base64url');
+          const now = Math.floor(Date.now()/1000);
+          const header = { alg: 'ES256', kid: process.env.ASC_KEY_ID, typ: 'JWT' };
+          const payload = { iss: process.env.ASC_ISSUER_ID, iat: now, exp: now + 300, aud: 'appstoreconnect-v1' };
+          const input = b64u(JSON.stringify(header)) + '.' + b64u(JSON.stringify(payload));
+          const key = fs.readFileSync('/tmp/asc-probe.p8', 'utf8');
+          const sig = crypto.sign('sha256', Buffer.from(input), { key, dsaEncoding: 'ieee-p1363' });
+          process.stdout.write(input + '.' + sig.toString('base64url'));
+          NODE
+          )
+          BUNDLE_CODE=$(curl -sS -o /tmp/iam-bundle.json -w '%{http_code}' -H "Authorization: Bearer $JWT" 'https://api.appstoreconnect.apple.com/v1/bundleIds?filter%5Bidentifier%5D=com.stormandme.iam&limit=1')
+          APP_CODE=$(curl -sS -o /tmp/iam-app.json -w '%{http_code}' -H "Authorization: Bearer $JWT" 'https://api.appstoreconnect.apple.com/v1/apps?filter%5BbundleId%5D=com.stormandme.iam&limit=1')
+          if [ "$BUNDLE_CODE" = '200' ]; then
+            echo 'APPLE_API_AUTH=yes' >> /tmp/bridge-status.txt
+            if [ "$(jq '.data | length' /tmp/iam-bundle.json)" -gt 0 ]; then echo 'IAM_BUNDLE_VISIBLE=yes' >> /tmp/bridge-status.txt; else echo 'IAM_BUNDLE_VISIBLE=no' >> /tmp/bridge-status.txt; fi
+          else
+            echo 'APPLE_API_AUTH=no' >> /tmp/bridge-status.txt
+          fi
+          if [ "$APP_CODE" = '200' ] && [ "$(jq '.data | length' /tmp/iam-app.json)" -gt 0 ]; then echo 'IAM_APP_RECORD_VISIBLE=yes' >> /tmp/bridge-status.txt; else echo 'IAM_APP_RECORD_VISIBLE=no' >> /tmp/bridge-status.txt; fi
+          rm -f /tmp/asc-probe.p8 /tmp/iam-bundle.json /tmp/iam-app.json
+
       - name: Encrypt ASC API key for private transfer
         shell: bash
         env:
