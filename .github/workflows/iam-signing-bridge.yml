@@ -29,7 +29,8 @@ jobs:
           echo 'APPLE_SECRET_SET_PRESENT=yes' > /tmp/bridge-status.txt
           if [ "$ASC_KEY_ID" = 'JR4QT262B3' ]; then echo 'EXPECTED_ASC_KEY_ID=yes' >> /tmp/bridge-status.txt; else echo 'EXPECTED_ASC_KEY_ID=no' >> /tmp/bridge-status.txt; fi
           if [ "$ASC_ISSUER_ID" = '7a563c78-d27a-4fe6-81b2-51072d4b4a46' ]; then echo 'EXPECTED_ASC_ISSUER=yes' >> /tmp/bridge-status.txt; else echo 'EXPECTED_ASC_ISSUER=no' >> /tmp/bridge-status.txt; fi
-          if [ "$APPLE_TEAM_ID" = 'F45X8Q5Z3G' ]; then echo 'I_AM_APPLE_TEAM_MATCH=yes' >> /tmp/bridge-status.txt; else echo 'I_AM_APPLE_TEAM_MATCH=no' >> /tmp/bridge-status.txt; fi
+          if [ "$APPLE_TEAM_ID" = 'F45X8Q5Z3G' ]; then echo 'I_AM_DOC_TEAM_F45=yes' >> /tmp/bridge-status.txt; else echo 'I_AM_DOC_TEAM_F45=no' >> /tmp/bridge-status.txt; fi
+          if [ "$APPLE_TEAM_ID" = 'CY5N965N53' ]; then echo 'KNOWN_SIGNING_TEAM_CY5=yes' >> /tmp/bridge-status.txt; else echo 'KNOWN_SIGNING_TEAM_CY5=no' >> /tmp/bridge-status.txt; fi
 
       - name: Probe I AM visibility through Apple API without leaking credentials
         shell: bash
