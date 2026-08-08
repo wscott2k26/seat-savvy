@@ -1,0 +1,121 @@
+name: I AM Provisioning Profile Bridge
+
+on:
+  push:
+    branches:
+      - iam-profile-bridge-2026-08-08
+
+permissions:
+  contents: read
+
+jobs:
+  profile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Create or reuse exact I AM App Store profile
+        shell: bash
+        env:
+          ASC_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          EXPECTED_SERIAL: 340085528E4FEEEF38968F2D7D1F663F
+          BUNDLE_IDENTIFIER: com.stormandme.iam
+          PROFILE_NAME: I AM App Store 2026-08-08
+        run: |
+          set -euo pipefail
+          umask 077
+          test -n "$ASC_KEY" && test -n "$ASC_KEY_ID" && test -n "$ASC_ISSUER_ID"
+          printf '%s' "$ASC_KEY" > /tmp/asc-profile.p8
+          export ASC_KEY_ID ASC_ISSUER_ID
+          JWT=$(node <<'NODE'
+          const fs=require('fs'),crypto=require('crypto');
+          const b=x=>Buffer.from(x).toString('base64url');
+          const now=Math.floor(Date.now()/1000);
+          const h={alg:'ES256',kid:process.env.ASC_KEY_ID,typ:'JWT'};
+          const p={iss:process.env.ASC_ISSUER_ID,iat:now,exp:now+600,aud:'appstoreconnect-v1'};
+          const input=b(JSON.stringify(h))+'.'+b(JSON.stringify(p));
+          const sig=crypto.sign('sha256',Buffer.from(input),{key:fs.readFileSync('/tmp/asc-profile.p8','utf8'),dsaEncoding:'ieee-p1363'});
+          process.stdout.write(input+'.'+sig.toString('base64url'));
+          NODE
+          )
+
+          BUNDLE_CODE=$(curl -sS -o /tmp/bundle.json -w '%{http_code}' -H "Authorization: Bearer $JWT" --get 'https://api.appstoreconnect.apple.com/v1/bundleIds' --data-urlencode "filter[identifier]=$BUNDLE_IDENTIFIER" --data-urlencode 'limit=1')
+          test "$BUNDLE_CODE" = '200'
+          BUNDLE_ID=$(jq -r '.data[0].id // empty' /tmp/bundle.json)
+          test -n "$BUNDLE_ID"
+
+          CERT_CODE=$(curl -sS -o /tmp/cert.json -w '%{http_code}' -H "Authorization: Bearer $JWT" --get 'https://api.appstoreconnect.apple.com/v1/certificates' --data-urlencode "filter[serialNumber]=$EXPECTED_SERIAL" --data-urlencode 'limit=10')
+          test "$CERT_CODE" = '200'
+          CERT_ID=$(jq -r --arg serial "$EXPECTED_SERIAL" '.data[] | select((.attributes.serialNumber // "" | ascii_upcase) == ($serial | ascii_upcase)) | .id' /tmp/cert.json | head -n1)
+          test -n "$CERT_ID"
+
+          PROFILE_CODE=$(curl -sS -o /tmp/profiles.json -w '%{http_code}' -H "Authorization: Bearer $JWT" --get 'https://api.appstoreconnect.apple.com/v1/profiles' --data-urlencode "filter[name]=$PROFILE_NAME" --data-urlencode 'filter[profileType]=IOS_APP_STORE' --data-urlencode 'limit=10')
+          test "$PROFILE_CODE" = '200'
+          PROFILE_ID=$(jq -r '.data[] | select(.attributes.profileState == "ACTIVE") | .id' /tmp/profiles.json | head -n1)
+
+          if [ -n "$PROFILE_ID" ]; then
+            DETAIL_CODE=$(curl -sS -o /tmp/profile.json -w '%{http_code}' -H "Authorization: Bearer $JWT" "https://api.appstoreconnect.apple.com/v1/profiles/$PROFILE_ID?include=bundleId,certificates")
+            test "$DETAIL_CODE" = '200'
+            jq -e --arg bundle "$BUNDLE_IDENTIFIER" '.included[]? | select(.type=="bundleIds") | select(.attributes.identifier==$bundle)' /tmp/profile.json >/dev/null
+            jq -e --arg serial "$EXPECTED_SERIAL" '.included[]? | select(.type=="certificates") | select((.attributes.serialNumber // "" | ascii_upcase)==($serial|ascii_upcase))' /tmp/profile.json >/dev/null
+            echo PROFILE_REUSED=yes > /tmp/profile-status.txt
+          else
+            jq -n --arg name "$PROFILE_NAME" --arg bid "$BUNDLE_ID" --arg cid "$CERT_ID" '{data:{type:"profiles",attributes:{name:$name,profileType:"IOS_APP_STORE"},relationships:{bundleId:{data:{type:"bundleIds",id:$bid}},certificates:{data:[{type:"certificates",id:$cid}]}}}}' > /tmp/create-profile.json
+            CREATE_CODE=$(curl -sS -o /tmp/profile.json -w '%{http_code}' -X POST -H "Authorization: Bearer $JWT" -H 'Content-Type: application/json' --data-binary @/tmp/create-profile.json 'https://api.appstoreconnect.apple.com/v1/profiles')
+            if [ "$CREATE_CODE" != '201' ]; then
+              jq '{errors}' /tmp/profile.json >&2 || true
+              exit 1
+            fi
+            PROFILE_ID=$(jq -r '.data.id // empty' /tmp/profile.json)
+            test -n "$PROFILE_ID"
+            echo PROFILE_REUSED=no > /tmp/profile-status.txt
+          fi
+
+          CONTENT=$(jq -r '.data.attributes.profileContent // empty' /tmp/profile.json)
+          test -n "$CONTENT"
+          printf '%s' "$CONTENT" | base64 -d > /tmp/I_AM_AppStore.mobileprovision
+          openssl cms -inform DER -verify -noverify -in /tmp/I_AM_AppStore.mobileprovision -out /tmp/profile.plist >/dev/null 2>&1
+          grep -F "$BUNDLE_IDENTIFIER" /tmp/profile.plist >/dev/null
+          grep -F 'CY5N965N53' /tmp/profile.plist >/dev/null
+          echo PROFILE_CONTENT_VALID=yes >> /tmp/profile-status.txt
+          echo PROFILE_TYPE_IOS_APP_STORE=yes >> /tmp/profile-status.txt
+          rm -f /tmp/asc-profile.p8 /tmp/bundle.json /tmp/cert.json /tmp/profiles.json /tmp/create-profile.json /tmp/profile.plist
+
+      - name: Encrypt profile for private I AM runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/bridge-public.pem <<'PUBKEY'
+          -----BEGIN PUBLIC KEY-----
+          MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsGuJwMMXi4W6NfotVuw4
+          vRLQOSuercEV7YW9QF4ua8znykhyJ4pwkbpGg5V1luVKYZrIv4WvkT0GGwibZUkv
+          RBPp/nQMnGEoQ6XDHxnqKIaC1K46B6LHWtkaUNmChp9JczvJILQHvg+YWB1qh50O
+          9UxHz/qw/psB//mIBMa4z6iJU4b4A+WsbXCST4LbezDRzD3j2/+AU7yL9WRgJsAe
+          XjC7h+Zv7NNkepNQFS8wFqiwOxc+3lKKyYPqbPMVxaO6aPlGhdoTKbU89lzjEb4+
+          fAxjMOoZRfN//vfaKUqc/mhZ6UcCsxeiR79VMiPnq3ofnNIcO6B/1Ee1OKZChtwv
+          n77sgLpoFYMCzLhKxAApnmZBCv30+pis5gwBEnfHpFuW7q4wQHY5Y+HP/k/gDXrB
+          5xHGIvXZG9anWy7ndghkNXOECieagMIU8KYLGyk2htti2k6f76VyOpovk/lBoNWo
+          SVQH/v4ROy7uw9L8uRuJ2w8SFSM3GT3E35xzKtkHqpk8dOFws3qkRWbNH6nYHuxI
+          iAsqZzL5dWru5D4ZdyWiPEMqzTRCEqFzFOOmlLHhCpgOb9THOy5yLkBIJ24PhdP2
+          f9z+rN7NfT/dYOQpbb6ziEKg/v+QyhjaZ9kA51mY645HuAdno+XXOPdSI+YhWbjl
+          E0lk8+H/+SoV1jYr2hpledMCAwEAAQ==
+          -----END PUBLIC KEY-----
+          PUBKEY
+          umask 077
+          openssl rand 32 > /tmp/profile-aes.key
+          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 200000 -in /tmp/I_AM_AppStore.mobileprovision -out /tmp/I_AM_AppStore.mobileprovision.enc -pass file:/tmp/profile-aes.key
+          openssl pkeyutl -encrypt -pubin -inkey /tmp/bridge-public.pem -in /tmp/profile-aes.key -out /tmp/profile-aes.key.enc -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256
+          sha256sum /tmp/I_AM_AppStore.mobileprovision.enc /tmp/profile-aes.key.enc >> /tmp/profile-status.txt
+          rm -f /tmp/I_AM_AppStore.mobileprovision /tmp/profile-aes.key
+
+      - name: Upload encrypted one-day profile artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: iam-app-store-profile-cipher
+          path: |
+            /tmp/I_AM_AppStore.mobileprovision.enc
+            /tmp/profile-aes.key.enc
+            /tmp/profile-status.txt
+          retention-days: 1
+          if-no-files-found: error
