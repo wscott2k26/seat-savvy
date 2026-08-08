@@ -1,0 +1,52 @@
+name: I AM Certificate Live Probe
+
+on:
+  push:
+    branches:
+      - iam-cert-bridge-2026-08-08
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify certificate serial against Apple API
+        shell: bash
+        env:
+          ASC_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          EXPECTED_SERIAL: 340085528E4FEEEF38968F2D7D1F663F
+        run: |
+          set -euo pipefail
+          umask 077
+          printf '%s' "$ASC_KEY" > /tmp/asc-probe.p8
+          export ASC_KEY_ID ASC_ISSUER_ID
+          JWT=$(node <<'NODE'
+          const fs = require('fs');
+          const crypto = require('crypto');
+          const b64u = x => Buffer.from(x).toString('base64url');
+          const now = Math.floor(Date.now()/1000);
+          const header = {alg:'ES256',kid:process.env.ASC_KEY_ID,typ:'JWT'};
+          const payload = {iss:process.env.ASC_ISSUER_ID,iat:now,exp:now+300,aud:'appstoreconnect-v1'};
+          const input = b64u(JSON.stringify(header))+'.'+b64u(JSON.stringify(payload));
+          const sig = crypto.sign('sha256',Buffer.from(input),{key:fs.readFileSync('/tmp/asc-probe.p8','utf8'),dsaEncoding:'ieee-p1363'});
+          process.stdout.write(input+'.'+sig.toString('base64url'));
+          NODE
+          )
+          CODE=$(curl -sS -o /tmp/certs.json -w '%{http_code}' -H "Authorization: Bearer $JWT" 'https://api.appstoreconnect.apple.com/v1/certificates?limit=200')
+          test "$CODE" = '200'
+          MATCH=$(jq -r --arg serial "$EXPECTED_SERIAL" '[.data[] | select((.attributes.serialNumber // "" | ascii_upcase) == ($serial | ascii_upcase))] | length' /tmp/certs.json)
+          echo APPLE_CERT_API_AUTH=yes > /tmp/live-cert-status.txt
+          if [ "$MATCH" -gt 0 ]; then echo REUSABLE_DISTRIBUTION_CERT_LIVE=yes >> /tmp/live-cert-status.txt; else echo REUSABLE_DISTRIBUTION_CERT_LIVE=no >> /tmp/live-cert-status.txt; exit 1; fi
+          rm -f /tmp/asc-probe.p8 /tmp/certs.json
+
+      - name: Upload non-secret status
+        uses: actions/upload-artifact@v4
+        with:
+          name: iam-live-cert-status
+          path: /tmp/live-cert-status.txt
+          retention-days: 1
