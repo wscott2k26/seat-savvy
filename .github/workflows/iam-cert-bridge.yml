@@ -1,0 +1,73 @@
+name: I AM Distribution Certificate Bridge
+
+on:
+  push:
+    branches:
+      - iam-cert-bridge-2026-08-08
+
+permissions:
+  contents: read
+
+jobs:
+  bridge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Verify reusable certificate secrets exist
+        shell: bash
+        env:
+          P12_B64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$P12_B64"
+          test -n "$P12_PASSWORD"
+          echo CERTIFICATE_SECRET_SET_PRESENT=yes > /tmp/cert-status.txt
+
+      - name: Encrypt certificate bundle for one-time private transfer
+        shell: bash
+        env:
+          P12_B64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          cat > /tmp/bridge-public.pem <<'PUBKEY'
+          -----BEGIN PUBLIC KEY-----
+          MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsGuJwMMXi4W6NfotVuw4
+          vRLQOSuercEV7YW9QF4ua8znykhyJ4pwkbpGg5V1luVKYZrIv4WvkT0GGwibZUkv
+          RBPp/nQMnGEoQ6XDHxnqKIaC1K46B6LHWtkaUNmChp9JczvJILQHvg+YWB1qh50O
+          9UxHz/qw/psB//mIBMa4z6iJU4b4A+WsbXCST4LbezDRzD3j2/+AU7yL9WRgJsAe
+          XjC7h+Zv7NNkepNQFS8wFqiwOxc+3lKKyYPqbPMVxaO6aPlGhdoTKbU89lzjEb4+
+          fAxjMOoZRfN//vfaKUqc/mhZ6UcCsxeiR79VMiPnq3ofnNIcO6B/1Ee1OKZChtwv
+          n77sgLpoFYMCzLhKxAApnmZBCv30+pis5gwBEnfHpFuW7q4wQHY5Y+HP/k/gDXrB
+          5xHGIvXZG9anWy7ndghkNXOECieagMIU8KYLGyk2htti2k6f76VyOpovk/lBoNWo
+          SVQH/v4ROy7uw9L8uRuJ2w8SFSM3GT3E35xzKtkHqpk8dOFws3qkRWbNH6nYHuxI
+          iAsqZzL5dWru5D4ZdyWiPEMqzTRCEqFzFOOmlLHhCpgOb9THOy5yLkBIJ24PhdP2
+          f9z+rN7NfT/dYOQpbb6ziEKg/v+QyhjaZ9kA51mY645HuAdno+XXOPdSI+YhWbjl
+          E0lk8+H/+SoV1jYr2hpledMCAwEAAQ==
+          -----END PUBLIC KEY-----
+          PUBKEY
+          umask 077
+          printf '%s' "$P12_B64" | base64 -d > /tmp/reusable-dist.p12
+          printf '%s' "$P12_PASSWORD" > /tmp/reusable-dist.password
+          openssl pkcs12 -in /tmp/reusable-dist.p12 -passin file:/tmp/reusable-dist.password -clcerts -nokeys -out /tmp/dist-cert.pem
+          openssl x509 -in /tmp/dist-cert.pem -noout -serial -enddate > /tmp/cert-meta.txt
+          echo CERTIFICATE_DECRYPT_AND_PARSE=yes >> /tmp/cert-status.txt
+          cat /tmp/reusable-dist.p12 /tmp/reusable-dist.password > /dev/null
+          tar -C /tmp -czf /tmp/certbundle.tgz reusable-dist.p12 reusable-dist.password cert-meta.txt
+          openssl rand 32 > /tmp/bridge-aes.key
+          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 200000 -in /tmp/certbundle.tgz -out /tmp/certbundle.tgz.enc -pass file:/tmp/bridge-aes.key
+          openssl pkeyutl -encrypt -pubin -inkey /tmp/bridge-public.pem -in /tmp/bridge-aes.key -out /tmp/bridge-aes.key.enc -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256
+          sha256sum /tmp/certbundle.tgz.enc /tmp/bridge-aes.key.enc >> /tmp/cert-status.txt
+          rm -f /tmp/reusable-dist.p12 /tmp/reusable-dist.password /tmp/dist-cert.pem /tmp/certbundle.tgz /tmp/bridge-aes.key
+
+      - name: Upload encrypted one-day certificate artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: iam-reusable-apple-certificate-cipher
+          path: |
+            /tmp/certbundle.tgz.enc
+            /tmp/bridge-aes.key.enc
+            /tmp/cert-status.txt
+          retention-days: 1
+          if-no-files-found: error
